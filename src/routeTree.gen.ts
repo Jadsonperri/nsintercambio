@@ -15,7 +15,14 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
+import { Route as AppIaRouteImport } from './routes/app.ia'
+import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppFaculdadesRouteImport } from './routes/app.faculdades'
+import { Route as AppExecucaoRouteImport } from './routes/app.execucao'
+import { Route as AppDirecaoRouteImport } from './routes/app.direcao'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppConexaoRouteImport } from './routes/app.conexao'
+import { Route as AppComunidadeRouteImport } from './routes/app.comunidade'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -47,9 +54,44 @@ const AppPerfilRoute = AppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIaRoute = AppIaRouteImport.update({
+  id: '/ia',
+  path: '/ia',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFaculdadesRoute = AppFaculdadesRouteImport.update({
   id: '/faculdades',
   path: '/faculdades',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExecucaoRoute = AppExecucaoRouteImport.update({
+  id: '/execucao',
+  path: '/execucao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDirecaoRoute = AppDirecaoRouteImport.update({
+  id: '/direcao',
+  path: '/direcao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConexaoRoute = AppConexaoRouteImport.update({
+  id: '/conexao',
+  path: '/conexao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppComunidadeRoute = AppComunidadeRouteImport.update({
+  id: '/comunidade',
+  path: '/comunidade',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -58,7 +100,14 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/app/comunidade': typeof AppComunidadeRoute
+  '/app/conexao': typeof AppConexaoRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/direcao': typeof AppDirecaoRoute
+  '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/': typeof AppIndexRoute
 }
@@ -66,7 +115,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/app/comunidade': typeof AppComunidadeRoute
+  '/app/conexao': typeof AppConexaoRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/direcao': typeof AppDirecaoRoute
+  '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app': typeof AppIndexRoute
 }
@@ -76,7 +132,14 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/app/comunidade': typeof AppComunidadeRoute
+  '/app/conexao': typeof AppConexaoRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/direcao': typeof AppDirecaoRoute
+  '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/': typeof AppIndexRoute
 }
@@ -87,18 +150,45 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/signup'
+    | '/app/comunidade'
+    | '/app/conexao'
+    | '/app/dashboard'
+    | '/app/direcao'
+    | '/app/execucao'
     | '/app/faculdades'
+    | '/app/financeiro'
+    | '/app/ia'
     | '/app/perfil'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/app/faculdades' | '/app/perfil' | '/app'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/app/comunidade'
+    | '/app/conexao'
+    | '/app/dashboard'
+    | '/app/direcao'
+    | '/app/execucao'
+    | '/app/faculdades'
+    | '/app/financeiro'
+    | '/app/ia'
+    | '/app/perfil'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/login'
     | '/signup'
+    | '/app/comunidade'
+    | '/app/conexao'
+    | '/app/dashboard'
+    | '/app/direcao'
+    | '/app/execucao'
     | '/app/faculdades'
+    | '/app/financeiro'
+    | '/app/ia'
     | '/app/perfil'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -154,6 +244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPerfilRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/ia': {
+      id: '/app/ia'
+      path: '/ia'
+      fullPath: '/app/ia'
+      preLoaderRoute: typeof AppIaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/financeiro': {
+      id: '/app/financeiro'
+      path: '/financeiro'
+      fullPath: '/app/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/faculdades': {
       id: '/app/faculdades'
       path: '/faculdades'
@@ -161,17 +265,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFaculdadesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/execucao': {
+      id: '/app/execucao'
+      path: '/execucao'
+      fullPath: '/app/execucao'
+      preLoaderRoute: typeof AppExecucaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/direcao': {
+      id: '/app/direcao'
+      path: '/direcao'
+      fullPath: '/app/direcao'
+      preLoaderRoute: typeof AppDirecaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/conexao': {
+      id: '/app/conexao'
+      path: '/conexao'
+      fullPath: '/app/conexao'
+      preLoaderRoute: typeof AppConexaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/comunidade': {
+      id: '/app/comunidade'
+      path: '/comunidade'
+      fullPath: '/app/comunidade'
+      preLoaderRoute: typeof AppComunidadeRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppComunidadeRoute: typeof AppComunidadeRoute
+  AppConexaoRoute: typeof AppConexaoRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDirecaoRoute: typeof AppDirecaoRoute
+  AppExecucaoRoute: typeof AppExecucaoRoute
   AppFaculdadesRoute: typeof AppFaculdadesRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppIaRoute: typeof AppIaRoute
   AppPerfilRoute: typeof AppPerfilRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppComunidadeRoute: AppComunidadeRoute,
+  AppConexaoRoute: AppConexaoRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDirecaoRoute: AppDirecaoRoute,
+  AppExecucaoRoute: AppExecucaoRoute,
   AppFaculdadesRoute: AppFaculdadesRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
+  AppIaRoute: AppIaRoute,
   AppPerfilRoute: AppPerfilRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -187,3 +340,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
