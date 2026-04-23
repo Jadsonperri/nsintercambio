@@ -14,7 +14,235 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          university_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          university_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          university_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline: {
+        Row: {
+          applied: boolean | null
+          created_at: string
+          email_sent: boolean | null
+          id: string
+          interest_level: string | null
+          last_activity_at: string | null
+          notes: string | null
+          response_received: boolean | null
+          status: string
+          university_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied?: boolean | null
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          interest_level?: string | null
+          last_activity_at?: string | null
+          notes?: string | null
+          response_received?: boolean | null
+          status?: string
+          university_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied?: boolean | null
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          interest_level?: string | null
+          last_activity_at?: string | null
+          notes?: string | null
+          response_received?: boolean | null
+          status?: string
+          university_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          about: string | null
+          age: number | null
+          avatar_url: string | null
+          budget_goal: number | null
+          city: string | null
+          commitment_level: string | null
+          country: string | null
+          created_at: string
+          current_savings: number | null
+          daily_time: string | null
+          documents_progress: number | null
+          education_level: string | null
+          email: string
+          english_level: string | null
+          full_name: string
+          has_passport: boolean | null
+          has_transcript: boolean | null
+          id: string
+          ielts_score: number | null
+          main_goal: string | null
+          monthly_expenses: number | null
+          monthly_focus: string | null
+          monthly_income: number | null
+          target_country: string | null
+          toefl_score: number | null
+          updated_at: string
+          username: string
+          willingness: string | null
+        }
+        Insert: {
+          about?: string | null
+          age?: number | null
+          avatar_url?: string | null
+          budget_goal?: number | null
+          city?: string | null
+          commitment_level?: string | null
+          country?: string | null
+          created_at?: string
+          current_savings?: number | null
+          daily_time?: string | null
+          documents_progress?: number | null
+          education_level?: string | null
+          email: string
+          english_level?: string | null
+          full_name: string
+          has_passport?: boolean | null
+          has_transcript?: boolean | null
+          id: string
+          ielts_score?: number | null
+          main_goal?: string | null
+          monthly_expenses?: number | null
+          monthly_focus?: string | null
+          monthly_income?: number | null
+          target_country?: string | null
+          toefl_score?: number | null
+          updated_at?: string
+          username: string
+          willingness?: string | null
+        }
+        Update: {
+          about?: string | null
+          age?: number | null
+          avatar_url?: string | null
+          budget_goal?: number | null
+          city?: string | null
+          commitment_level?: string | null
+          country?: string | null
+          created_at?: string
+          current_savings?: number | null
+          daily_time?: string | null
+          documents_progress?: number | null
+          education_level?: string | null
+          email?: string
+          english_level?: string | null
+          full_name?: string
+          has_passport?: boolean | null
+          has_transcript?: boolean | null
+          id?: string
+          ielts_score?: number | null
+          main_goal?: string | null
+          monthly_expenses?: number | null
+          monthly_focus?: string | null
+          monthly_income?: number | null
+          target_country?: string | null
+          toefl_score?: number | null
+          updated_at?: string
+          username?: string
+          willingness?: string | null
+        }
+        Relationships: []
+      }
+      universities: {
+        Row: {
+          acceptance_chance: string | null
+          city: string | null
+          country: string
+          created_at: string
+          division: string | null
+          estimated_cost_usd: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          nature: string
+          scholarship_available: boolean | null
+          state: string
+          type: string
+          website: string | null
+        }
+        Insert: {
+          acceptance_chance?: string | null
+          city?: string | null
+          country: string
+          created_at?: string
+          division?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          nature: string
+          scholarship_available?: boolean | null
+          state: string
+          type: string
+          website?: string | null
+        }
+        Update: {
+          acceptance_chance?: string | null
+          city?: string | null
+          country?: string
+          created_at?: string
+          division?: string | null
+          estimated_cost_usd?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          nature?: string
+          scholarship_available?: boolean | null
+          state?: string
+          type?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
