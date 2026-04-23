@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof Home; exact?: boolean };
+const NAV: readonly NavItem[] = [
   { to: "/app", label: "Painel Inicial", icon: Home, exact: true },
   { to: "/app/dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/app/faculdades", label: "Jornada Acadêmica", icon: GraduationCap },
