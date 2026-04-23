@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import { Link as RLink, useLocation, useNavigate } from "@tanstack/react-router";
-const _Link = RLink;
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Home, LayoutDashboard, GraduationCap, Brain, Wallet,
   Compass, ListChecks, Mail, User as UserIcon, Globe, LogOut, Settings, Shield
