@@ -124,15 +124,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {NAV.map((item) => {
             const active = item.exact ? loc.pathname === item.to : loc.pathname.startsWith(item.to);
             return (
-              <Link
+              <a
                 key={item.to}
-                to={item.to}
+                href={item.to}
+                onClick={(e) => { e.preventDefault(); navigate({ to: item.to as never }); }}
                 className={`shrink-0 rounded-md px-3 py-1.5 text-xs ${
                   active ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
                 {item.label}
-              </Link>
+              </a>
             );
           })}
         </nav>
