@@ -26,7 +26,7 @@ const NAV: readonly NavItem[] = [
   { to: "/app/conexao", label: "Conexão", icon: Mail },
   { to: "/app/perfil", label: "Perfil", icon: UserIcon },
   { to: "/app/comunidade", label: "Comunidade", icon: Globe },
-] as const;
+];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
