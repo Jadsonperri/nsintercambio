@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          achievement_type: string
+          badge: string | null
+          content: string
+          created_at: string
+          id: string
+          university_id: string | null
+          user_id: string
+        }
+        Insert: {
+          achievement_type: string
+          badge?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          university_id?: string | null
+          user_id: string
+        }
+        Update: {
+          achievement_type?: string
+          badge?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          university_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -42,6 +101,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_data: {
+        Row: {
+          budget_goal: number | null
+          created_at: string
+          currency: string | null
+          current_savings: number | null
+          id: string
+          monthly_expenses: number | null
+          monthly_income: number | null
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_goal?: number | null
+          created_at?: string
+          currency?: string | null
+          current_savings?: number | null
+          id?: string
+          monthly_expenses?: number | null
+          monthly_income?: number | null
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_goal?: number | null
+          created_at?: string
+          currency?: string | null
+          current_savings?: number | null
+          id?: string
+          monthly_expenses?: number | null
+          monthly_income?: number | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          category: string
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          impact: string | null
+          is_focus: boolean | null
+          progress: number
+          status: string
+          title: string
+          updated_at: string
+          urgency: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          is_focus?: boolean | null
+          progress?: number
+          status?: string
+          title: string
+          updated_at?: string
+          urgency?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          is_focus?: boolean | null
+          progress?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          urgency?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       pipeline: {
         Row: {
