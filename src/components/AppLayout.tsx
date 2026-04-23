@@ -53,9 +53,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
             const Icon = item.icon;
             const active = item.exact ? loc.pathname === item.to : loc.pathname.startsWith(item.to);
             return (
-              <Link
+              <a
                 key={item.to}
-                to={item.to}
+                href={item.to}
+                onClick={(e) => { e.preventDefault(); navigate({ to: item.to as never }); }}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-smooth ${
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm"
@@ -67,7 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </span>
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="truncate">{item.label}</span>
-              </Link>
+              </a>
             );
           })}
         </nav>
