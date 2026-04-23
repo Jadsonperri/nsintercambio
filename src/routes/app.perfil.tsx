@@ -28,14 +28,15 @@ function PerfilPage() {
   const save = async () => {
     if (!user) return;
     setSaving(true);
+    const d = data as Record<string, never>;
     const { error } = await supabase.from("profiles").update({
-      full_name: data.full_name, age: data.age, country: data.country, city: data.city, about: data.about,
-      education_level: data.education_level, english_level: data.english_level,
-      monthly_income: data.monthly_income, monthly_expenses: data.monthly_expenses,
-      current_savings: data.current_savings, budget_goal: data.budget_goal,
-      target_country: data.target_country, main_goal: data.main_goal,
-      has_passport: data.has_passport, has_transcript: data.has_transcript,
-      willingness: data.willingness, daily_time: data.daily_time, commitment_level: data.commitment_level,
+      full_name: d.full_name, age: d.age, country: d.country, city: d.city, about: d.about,
+      education_level: d.education_level, english_level: d.english_level,
+      monthly_income: d.monthly_income, monthly_expenses: d.monthly_expenses,
+      current_savings: d.current_savings, budget_goal: d.budget_goal,
+      target_country: d.target_country, main_goal: d.main_goal,
+      has_passport: d.has_passport, has_transcript: d.has_transcript,
+      willingness: d.willingness, daily_time: d.daily_time, commitment_level: d.commitment_level,
     }).eq("id", user.id);
     setSaving(false);
     if (error) toast.error("Erro ao salvar");
