@@ -375,6 +375,44 @@ export type Database = {
           },
         ]
       }
+      pipeline_history: {
+        Row: {
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          pipeline_id: string
+          to_status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          pipeline_id: string
+          to_status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          pipeline_id?: string
+          to_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_history_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           about: string | null
