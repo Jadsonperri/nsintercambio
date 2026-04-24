@@ -122,7 +122,9 @@ function ExecucaoPage() {
   };
 
   const updateRow = async (id: string, patch: Partial<Row>, statusChange?: { from: string; to: string }) => {
-    const { error } = await supabase.from("pipeline").update({ ...patch, last_activity_at: new Date().toISOString() }).eq("id", id);
+    const { universities: _u, ...rest } = patch;
+    void _u;
+    const { error } = await supabase.from("pipeline").update({ ...rest, last_activity_at: new Date().toISOString() }).eq("id", id);
     if (error) { toast.error(error.message); return; }
     if (statusChange && user) {
       await supabase.from("pipeline_history").insert({
