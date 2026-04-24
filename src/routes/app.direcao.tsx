@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Stub } from "./app.dashboard";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+// "Direção Estratégica" foi unificada em "Estratégia & IA"
 export const Route = createFileRoute("/app/direcao")({
-  component: () => <Stub title="Direção Estratégica" desc="Painel executivo com resumo IA, foco global, estratégia de aplicação e alertas na próxima iteração." />,
+  beforeLoad: () => { throw redirect({ to: "/app/ia" }); },
+  component: () => null,
 });
