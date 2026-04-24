@@ -18,15 +18,19 @@ type Fin = {
   current_savings: number | null;
   budget_goal: number | null;
   currency: string;
+  usd_rate_override: number | null;
 };
 
 function FinanceiroPage() {
   const { user } = useAuth();
   const [fin, setFin] = useState<Fin>({
-    monthly_income: null, monthly_expenses: null, current_savings: null, budget_goal: null, currency: "BRL",
+    monthly_income: null, monthly_expenses: null, current_savings: null, budget_goal: null, currency: "BRL", usd_rate_override: null,
   });
   const [saving, setSaving] = useState(false);
-  const [usdRate, setUsdRate] = useState<number | null>(null);
+  const [apiRate, setApiRate] = useState<number | null>(null);
+
+  // Cotação efetiva: override manual > API > fallback
+  const usdRate = fin.usd_rate_override ?? apiRate;
 
   useEffect(() => {
     if (!user) return;
@@ -35,23 +39,24 @@ function FinanceiroPage() {
         monthly_income: data.monthly_income, monthly_expenses: data.monthly_expenses,
         current_savings: data.current_savings, budget_goal: data.budget_goal,
         currency: data.currency || "BRL",
+        usd_rate_override: (data as { usd_rate_override?: number | null }).usd_rate_override ?? null,
       });
     });
     const cached = localStorage.getItem("usd_rate");
     if (cached) {
       const { rate, ts } = JSON.parse(cached);
-      if (Date.now() - ts < 86400000) { setUsdRate(rate); return; }
+      if (Date.now() - ts < 86400000) { setApiRate(rate); return; }
     }
     fetch("https://api.exchangerate-api.com/v4/latest/USD")
       .then((r) => r.json())
       .then((d) => {
         const rate = d.rates?.BRL;
         if (rate) {
-          setUsdRate(rate);
+          setApiRate(rate);
           localStorage.setItem("usd_rate", JSON.stringify({ rate, ts: Date.now() }));
         }
       })
-      .catch(() => setUsdRate(5.0));
+      .catch(() => setApiRate(5.0));
   }, [user]);
 
   const save = async () => {
@@ -199,10 +204,28 @@ function FinanceiroPage() {
         <TabsContent value="convert" className="mt-6">
           <Card className="p-6 space-y-4">
             <h2 className="font-semibold text-lg">Conversão de Moeda</h2>
-            <p className="text-sm text-muted-foreground">
-              Cotação atual: 1 USD ≈ {usdRate ? `R$ ${usdRate.toFixed(2)}` : "carregando..."}
-              <span className="ml-2 text-xs">(cache 24h)</span>
-            </p>
+            <div className="space-y-2">
+              <Label className="text-xs">Cotação USD → BRL (editável — sobrescreve a API)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder={apiRate ? `API: ${apiRate.toFixed(2)}` : "Carregando API..."}
+                  value={fin.usd_rate_override ?? ""}
+                  onChange={(e) => setFin({ ...fin, usd_rate_override: e.target.value ? Number(e.target.value) : null })}
+                  className="max-w-[180px]"
+                />
+                {fin.usd_rate_override && (
+                  <Button variant="outline" size="sm" onClick={() => setFin({ ...fin, usd_rate_override: null })}>
+                    Usar cotação da API
+                  </Button>
+                )}
+                <Button size="sm" onClick={save} disabled={saving}>Salvar</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Em uso: 1 USD ≈ R$ {usdRate?.toFixed(2) ?? "—"} {fin.usd_rate_override ? "(manual)" : "(API · cache 24h)"}
+              </p>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <Card className="p-4 bg-muted/30">
                 <div className="text-sm text-muted-foreground">Sua reserva em USD</div>
