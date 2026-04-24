@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_likes: {
         Row: {
           created_at: string
@@ -73,6 +129,53 @@ export type Database = {
         }
         Relationships: []
       }
+      emails_log: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          reply_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          university_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          reply_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          university_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          reply_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          university_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emails_log_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -113,6 +216,7 @@ export type Database = {
           monthly_income: number | null
           notes: string | null
           updated_at: string
+          usd_rate_override: number | null
           user_id: string
         }
         Insert: {
@@ -125,6 +229,7 @@ export type Database = {
           monthly_income?: number | null
           notes?: string | null
           updated_at?: string
+          usd_rate_override?: number | null
           user_id: string
         }
         Update: {
@@ -137,6 +242,7 @@ export type Database = {
           monthly_income?: number | null
           notes?: string | null
           updated_at?: string
+          usd_rate_override?: number | null
           user_id?: string
         }
         Relationships: []
@@ -186,6 +292,33 @@ export type Database = {
           updated_at?: string
           urgency?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_at: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          receiver_id?: string
+          sender_id?: string
         }
         Relationships: []
       }
