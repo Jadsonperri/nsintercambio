@@ -121,10 +121,12 @@ function FaculdadesPage() {
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-muted-foreground">{country === "CANADA" ? "PROVÍNCIA" : "ESTADO"}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="text-xs font-semibold text-muted-foreground">
+            {country === "CANADA" ? "PROVÍNCIA" : country === "USA" ? "ESTADO" : "ESTADO / PROVÍNCIA"}
+          </div>
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
             <FilterChip active={state === "ALL"} onClick={() => setState("ALL")}>Todos</FilterChip>
-            {states.slice(0, 20).map(s => (
+            {states.map(s => (
               <FilterChip key={s} active={state === s} onClick={() => setState(s)}>{s}</FilterChip>
             ))}
           </div>
