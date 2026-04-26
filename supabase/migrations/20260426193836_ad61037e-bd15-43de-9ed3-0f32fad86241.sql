@@ -1,0 +1,1 @@
+DELETE FROM public.universities WHERE name='TEST_REMOVEME';
