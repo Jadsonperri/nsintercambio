@@ -121,10 +121,12 @@ function FaculdadesPage() {
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-muted-foreground">{country === "CANADA" ? "PROVÍNCIA" : "ESTADO"}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="text-xs font-semibold text-muted-foreground">
+            {country === "CANADA" ? "PROVÍNCIA" : country === "USA" ? "ESTADO" : "ESTADO / PROVÍNCIA"}
+          </div>
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
             <FilterChip active={state === "ALL"} onClick={() => setState("ALL")}>Todos</FilterChip>
-            {states.slice(0, 20).map(s => (
+            {states.map(s => (
               <FilterChip key={s} active={state === s} onClick={() => setState(s)}>{s}</FilterChip>
             ))}
           </div>
@@ -143,7 +145,7 @@ function FaculdadesPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{u.name}</h3>
                   <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3" /> {u.city}, {u.state}, {u.country === "USA" ? "EUA" : "Canadá"}
+                    <MapPin className="h-3 w-3" /> {[u.city, u.state, u.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
                   </div>
                 </div>
                 <button onClick={() => toggleFav(u.id)} className="shrink-0 p-2 -m-2 transition-smooth">
