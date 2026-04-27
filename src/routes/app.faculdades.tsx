@@ -71,6 +71,11 @@ function FaculdadesPage() {
     return true;
   }), [unis, search, country, type, division, state]);
 
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state]);
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+
   const toggleFav = async (uId: string) => {
     if (!user) return;
     if (favIds.has(uId)) {
