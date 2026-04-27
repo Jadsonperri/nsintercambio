@@ -1,91 +1,81 @@
+# Seed massivo de universidades — IPEDS + Canadá (~6.300 instituições)
 
-# Roadmap NEXT SCHOOL — Otimizado para 5 créditos/dia
+## Objetivo
 
-Cada item abaixo = **1 mensagem de build**. Ordem prioriza: desbloquear IA → dados reais → módulos vazios → polimento.
+Popular `public.universities` com ~6.300 instituições reais (EUA + Canadá) a partir de fontes oficiais, mantendo o schema atual (zero refactor de UI).
 
-**Estimativa total:** ~10 entregas → **2 dias** se usar os 5 créditos diários, ou ~3-4 dias com folga.
+## Fontes
 
-> Lembrete: build mode tem custo variável. Os números abaixo são metas de escopo, não garantia exata.
+- **EUA**: IPEDS HD (Higher Education Directory) do NCES — CSV oficial com ~6.000 instituições Title IV. Campos: UNITID, INSTNM, CITY, STABBR, LATITUDE, LONGITUD, CONTROL (1=público, 2=privado nonprofit, 3=privado for-profit), ICLEVEL (1=4 anos, 2=2 anos, 3=<2 anos), WEBADDR.
+- **Canadá**: Universities Canada (96 públicas) + Colleges and Institutes Canada (~150 colleges) + lista de privadas reconhecidas. Fonte: scraping das páginas oficiais (ou CSV agregado público se disponível).
 
----
+## Mapeamento para o schema atual
 
-## DIA 1 (5 entregas — desbloquear IA + dados)
+Sem mudar nenhuma coluna. Mapeamento determinístico:
 
-### Entrega 1 — Popular base de universidades (~1 créd)
-- Importar dataset real de **1.000+ universidades** EUA + Canadá via SQL migration
-- Campos: nome, cidade, estado/província, tipo, natureza, divisão esportiva, custo estimado, bolsa, chance, lat/long
-- Fonte: dataset público (IPEDS/NCAA + Universities Canada)
-- **Desbloqueia:** Faculdades, Mapa, Dashboard rankings, IA
+| Coluna do banco | Origem |
+|---|---|
+| `name` | INSTNM (IPEDS) / nome oficial (CA) |
+| `country` | `"USA"` ou `"CANADA"` |
+| `state` | STABBR (EUA, sigla 2 letras) / sigla província (CA) |
+| `city` | CITY |
+| `type` | ICLEVEL: 1→`university` se 4 anos, 2→`community_college`, 3→`college`. Heurística adicional: nome contendo "Community College" → `community_college`; "College" sem "University" → `college`. |
+| `nature` | CONTROL: 1→`public`, 2/3→`private` |
+| `division` | NULL por padrão. Cruzar com lista NCAA D1/D2/D3 + NAIA + NJCAA por nome (matching fuzzy). Canadá: U_SPORTS para universities, NULL para colleges. |
+| `estimated_cost_usd` | Heurística por (country, type, nature): community público $10k, college público $20k, university pública $28k, college privada $35k, university privada $50k. Canadá: ~$25k university, $18k college. |
+| `scholarship_available` | true se division ≠ NULL ou nature=`public`; false caso contrário |
+| `acceptance_chance` | Heurística: community→`high`, college→`medium`, university pública→`medium`, university privada→`low`. Override para Ivy League e top 25 (lista hardcoded ~30 escolas) → `low`. |
+| `latitude`, `longitude` | LATITUDE, LONGITUD (IPEDS) / geocoded para Canadá |
+| `website` | WEBADDR (prefixar `https://` se faltar) |
 
-### Entrega 2 — Score & Simulação (Estratégia & IA, sub-aba 2) (~1 créd)
-- Implementar lógica 0–100 com pesos (Financeiro 30/Inglês 25/Docs 15/Progresso 15/Acadêmico 10/Tempo 5/Esporte 0–10)
-- Inputs com sliders/selects, recálculo em tempo real
-- Resultado visual com faixas 🔴🟡🟢🔥 + pontos fortes/fracos
-- Salvar última simulação em tabela `scores` (criar)
-- **Desbloqueia:** Direção, Dashboard insights, Readiness
+## Passos de execução
 
-### Entrega 3 — Chat IA + Modos (sub-aba 1) (~1 créd)
-- Edge function `chat-ia` usando Lovable AI (gemini-2.5-flash)
-- Lê perfil + pipeline + financeiro do user_id
-- 4 modos: Estratégico/Rápido/Mentor/Crítico (system prompts diferentes)
-- Estado vazio: "Complete seu perfil"
-- **Desbloqueia:** Direção, Análise, Comparador (reutiliza edge fn)
+### 1. Garantir índice único (migração)
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS universities_name_country_state_uniq
+  ON public.universities (name, country, state);
+```
 
-### Entrega 4 — Direção Estratégica + Plano de Ação IA (sub-abas 3 e 6) (~1 créd)
-- Visão executiva consolidada (situação/bloqueio/oportunidade/prontidão)
-- Alerta global automático (inconsistências)
-- Plano de Ação gerado pela IA (passos priorizados)
-- Detector de Erro Estratégico
-- **Desbloqueia:** Dashboard "Painel de Decisão Final"
+### 2. Baixar e processar dados (script Python local)
+- Download IPEDS HD2023.zip via `curl` da NCES
+- Parse CSV (encoding latin-1, ~6.000 linhas)
+- Filtrar: ICLEVEL ∈ {1,2,3}, sectors válidos, com lat/lng não-nulos
+- Para Canadá: fetch lista Universities Canada + CICan. Se scraping falhar, usar dataset curado de ~300 (já tenho ~55 da entrega anterior + expandir manualmente para ~300 a partir de listas públicas).
+- Aplicar mapeamento acima
+- Carregar lista NCAA/NAIA/NJCAA (CSV público) para popular `division`
+- Override Ivy League + top schools manualmente
 
-### Entrega 5 — Dashboard completo (~1 créd)
-- Mapa EUA+Canadá (react-simple-maps ou leaflet leve) com pontos
-- Card "Foco Global" + "Painel de Decisão Final" + "Próximo Passo Único"
-- Resumo pipeline por status + atividade recente
-- Insights IA integrados (consome edge fn da entrega 3)
+### 3. Limpar tabela atual e inserir em lotes
+```sql
+DELETE FROM pipeline_history;
+DELETE FROM pipeline;
+DELETE FROM favorites;
+DELETE FROM universities;
+```
+Inserir via `psql COPY FROM STDIN` (muito mais rápido que INSERTs individuais para 6.000+ linhas).
 
----
+### 4. Verificação final
+```sql
+SELECT country, type, nature, COUNT(*)
+FROM universities
+GROUP BY 1,2,3 ORDER BY 1,2,3;
+```
+Esperado: ~6.000 USA distribuídos + ~300 CANADA.
 
-## DIA 2 (5 entregas — módulos vazios + polimento)
+### 5. UI já está pronta
+`src/routes/app.faculdades.tsx` já lê todos esses campos. Único ajuste: garantir que a paginação/scroll aguenta 6.000 cards (adicionar virtualização ou limite inicial de 200 com "carregar mais").
 
-### Entrega 6 — Início (/home) completo (~1 créd)
-- Hero dinâmico (incompleto vs completo)
-- Foco mensal editável + saúde do plano + alertas (max 3)
-- Timeline de prazos + próximo passo IA
-- Notícias dinâmicas (feed simples)
+## Limitações honestas
 
-### Entrega 7 — Conexão (/communication) completo (~1 créd)
-- UI sobre `emails_log`: rascunhos/enviados/falhou/respondido
-- Lista de contatos universitários com status de relacionamento
-- Follow-up inteligente + sugestões IA
-- Sincroniza com Pipeline
+- **Custo e chance são heurística**, não dados reais por escola. Para precisão real precisaria do IPEDS IC (Institutional Characteristics) que é outro CSV de ~50MB e levaria mais 1-2 créditos.
+- **Divisão esportiva**: matching por nome tem ~10% de erro. Schools sem match ficam NULL.
+- **Canadá**: pode não chegar exatamente a 305 — depende do que conseguir extrair das fontes públicas em uma rodada. Garanto pelo menos 200.
+- **Lat/lng**: IPEDS tem ~95% de cobertura. Linhas sem coordenada serão inseridas com lat/lng NULL (mapa simplesmente não mostra).
 
-### Entrega 8 — Comunidade — comentários/amizades/mensagens (~1 créd)
-- UI de comentários no feed (tabela já existe)
-- Adicionar amigo por username + lista
-- Chat 1:1 realtime (Supabase Realtime sobre `messages`)
-- Upload avatar funcional
+## Risco
 
-### Entrega 9 — Financeiro completo + Perfil avançado (~1 créd)
-- Fluxo de caixa + projeção + simulador de cenários
-- Score financeiro 0–100 + alertas + custo de vida por estado
-- Perfil: Sistema de Evolução (Nível 1–4), Resumo IA, Readiness Score automático
+Se o download do IPEDS falhar ou mudar de URL, faço fallback para mirror no GitHub (urbaninstitute/education-data) ou College Scorecard API (também oficial, JSON, mesma cobertura).
 
-### Entrega 10 — Pipeline: Planos de Ação + Faculdades polish (~1 créd)
-- Sub-módulo Planos de Ação com 6 sub-abas (Metas/Estudos/Docs/Certificados/Provas/Financeiras) sobre tabela `goals`
-- Faculdades: filtros pill/chip horizontais, filtro Estado/Província inteligente
-- Resumo IA por card do Kanban
+## Custo estimado
 
----
-
-## Como executar
-
-A cada dia, me mande simplesmente: **"executar entrega N"** e eu implemento aquele bloco. Se o crédito do dia sobrar, seguimos para a próxima.
-
-## Riscos / pontos de atenção
-
-- **Entrega 1** depende de dataset bom — uso fontes públicas (IPEDS para EUA, Universities Canada). Se não bater 1.000+, completo com fonte secundária.
-- **Mapa (entrega 5)** pode pesar; usarei lib leve (react-simple-maps) com geojson estático.
-- **Edge functions de IA** consomem créditos do **balance Cloud/AI** (separado dos créditos de chat) — você tem $1 grátis/mês.
-
-Pronto para começar pela Entrega 1?
+1–2 créditos. Tudo em uma única entrega.

@@ -28,10 +28,23 @@ function FaculdadesPage() {
   const [type, setType] = useState<string>("ALL");
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
+  const [visibleCount, setVisibleCount] = useState(60);
 
   const refresh = async () => {
-    const { data } = await supabase.from("universities").select("*").order("name");
-    setUnis((data as Uni[]) ?? []);
+    // Supabase default limit is 1000; paginate to fetch all ~6k universities
+    const PAGE = 1000;
+    const all: Uni[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data } = await supabase
+        .from("universities")
+        .select("*")
+        .order("name")
+        .range(from, from + PAGE - 1);
+      const batch = (data as Uni[]) ?? [];
+      all.push(...batch);
+      if (batch.length < PAGE) break;
+    }
+    setUnis(all);
     if (user) {
       const [{ data: f }, { data: p }] = await Promise.all([
         supabase.from("favorites").select("university_id").eq("user_id", user.id),
@@ -57,6 +70,11 @@ function FaculdadesPage() {
     if (state !== "ALL" && u.state !== state) return false;
     return true;
   }), [unis, search, country, type, division, state]);
+
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state]);
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const toggleFav = async (uId: string) => {
     if (!user) return;
@@ -133,10 +151,12 @@ function FaculdadesPage() {
         </div>
       </Card>
 
-      <div className="text-sm text-muted-foreground">{filtered.length} resultados</div>
+      <div className="text-sm text-muted-foreground">
+        {filtered.length.toLocaleString()} resultados {visible.length < filtered.length && `(mostrando ${visible.length})`}
+      </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(u => {
+        {visible.map(u => {
           const isFav = favIds.has(u.id);
           const inPipe = pipeIds.has(u.id);
           return (
@@ -189,6 +209,14 @@ function FaculdadesPage() {
           );
         })}
       </div>
+
+      {visible.length < filtered.length && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => setVisibleCount(c => c + 60)}>
+            Carregar mais ({(filtered.length - visible.length).toLocaleString()} restantes)
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
