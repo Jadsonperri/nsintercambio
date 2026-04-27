@@ -209,6 +209,14 @@ function FaculdadesPage() {
           );
         })}
       </div>
+
+      {visible.length < filtered.length && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => setVisibleCount(c => c + 60)}>
+            Carregar mais ({(filtered.length - visible.length).toLocaleString()} restantes)
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
