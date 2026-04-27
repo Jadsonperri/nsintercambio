@@ -28,10 +28,23 @@ function FaculdadesPage() {
   const [type, setType] = useState<string>("ALL");
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
+  const [visibleCount, setVisibleCount] = useState(60);
 
   const refresh = async () => {
-    const { data } = await supabase.from("universities").select("*").order("name");
-    setUnis((data as Uni[]) ?? []);
+    // Supabase default limit is 1000; paginate to fetch all ~6k universities
+    const PAGE = 1000;
+    const all: Uni[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data } = await supabase
+        .from("universities")
+        .select("*")
+        .order("name")
+        .range(from, from + PAGE - 1);
+      const batch = (data as Uni[]) ?? [];
+      all.push(...batch);
+      if (batch.length < PAGE) break;
+    }
+    setUnis(all);
     if (user) {
       const [{ data: f }, { data: p }] = await Promise.all([
         supabase.from("favorites").select("university_id").eq("user_id", user.id),
