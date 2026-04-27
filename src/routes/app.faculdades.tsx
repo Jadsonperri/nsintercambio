@@ -151,10 +151,12 @@ function FaculdadesPage() {
         </div>
       </Card>
 
-      <div className="text-sm text-muted-foreground">{filtered.length} resultados</div>
+      <div className="text-sm text-muted-foreground">
+        {filtered.length.toLocaleString()} resultados {visible.length < filtered.length && `(mostrando ${visible.length})`}
+      </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(u => {
+        {visible.map(u => {
           const isFav = favIds.has(u.id);
           const inPipe = pipeIds.has(u.id);
           return (
