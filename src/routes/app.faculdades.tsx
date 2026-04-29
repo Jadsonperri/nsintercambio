@@ -471,48 +471,79 @@ function UniMap({
   onAddPipeline: (uId: string) => Promise<void>;
 }) {
   const [selected, setSelected] = useState<Uni | null>(null);
+  const [hovered, setHovered] = useState<{ u: Uni; x: number; y: number } | null>(null);
+  const [mapFilter, setMapFilter] = useState<"all" | "fav" | "pipe" | "high">("all");
   const [Maps, setMaps] = useState<typeof import("react-simple-maps") | null>(null);
 
-  // Lazy-load to keep initial bundle light
   useEffect(() => {
     let mounted = true;
     import("react-simple-maps").then(m => { if (mounted) setMaps(m); });
     return () => { mounted = false; };
   }, []);
 
-  const pts = useMemo(
+  const ptsAll = useMemo(
     () => unis.filter(u => u.latitude != null && u.longitude != null),
     [unis]
   );
 
-  const total = pts.length;
-  const favCount = pts.filter(u => favIds.has(u.id)).length;
-  const pipeCount = pts.filter(u => pipeIds.has(u.id)).length;
+  const pts = useMemo(() => {
+    if (mapFilter === "fav") return ptsAll.filter(u => favIds.has(u.id));
+    if (mapFilter === "pipe") return ptsAll.filter(u => pipeIds.has(u.id));
+    if (mapFilter === "high") return ptsAll.filter(u => u.acceptance_chance === "high");
+    return ptsAll;
+  }, [ptsAll, mapFilter, favIds, pipeIds]);
+
+  const total = ptsAll.length;
+  const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
+  const pipeCount = ptsAll.filter(u => pipeIds.has(u.id)).length;
+  const highCount = ptsAll.filter(u => u.acceptance_chance === "high").length;
+
+  const colorOf = (u: Uni) => {
+    if (favIds.has(u.id)) return "fill-accent";
+    if (pipeIds.has(u.id)) return "fill-primary";
+    if (u.acceptance_chance === "high") return "fill-success";
+    return "fill-muted-foreground/50";
+  };
+
+  const TabBtn = ({ v, label, count, dotClass }: { v: typeof mapFilter; label: string; count: number; dotClass: string }) => (
+    <button
+      onClick={() => setMapFilter(v)}
+      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-smooth border flex items-center gap-1.5 ${
+        mapFilter === v
+          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+          : "bg-background border-border text-muted-foreground hover:bg-muted"
+      }`}
+    >
+      <span className={`inline-block h-2 w-2 rounded-full ${dotClass}`} />
+      {label} <span className="opacity-70">({count})</span>
+    </button>
+  );
 
   return (
     <Card className="p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/50" /> {total.toLocaleString()} no mapa</span>
-          <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" /> {favCount} favoritas</span>
-          <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" /> {pipeCount} no pipeline</span>
+        <div className="flex flex-wrap gap-1.5">
+          <TabBtn v="all" label="Todas" count={total} dotClass="bg-muted-foreground/60" />
+          <TabBtn v="fav" label="Favoritas" count={favCount} dotClass="bg-accent" />
+          <TabBtn v="pipe" label="Pipeline" count={pipeCount} dotClass="bg-primary" />
+          <TabBtn v="high" label="+ chance" count={highCount} dotClass="bg-success" />
         </div>
         {selected && (
           <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
         )}
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/30" style={{ minHeight: 400 }}>
+      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-card" style={{ minHeight: 420 }}>
         {!Maps ? (
-          <div className="flex items-center justify-center h-[400px] text-sm text-muted-foreground">
+          <div className="flex items-center justify-center h-[420px] text-sm text-muted-foreground">
             Carregando mapa...
           </div>
         ) : (
           <Maps.ComposableMap
-            projection="geoAlbers"
-            projectionConfig={{ scale: 700, center: [-15, 8], rotate: [98, 0, 0] }}
-            width={900}
-            height={500}
+            projection="geoAlbersUsa"
+            projectionConfig={{ scale: 1000 }}
+            width={980}
+            height={560}
             style={{ width: "100%", height: "auto", display: "block" }}
           >
             <Maps.Geographies geography={GEO_URL}>
@@ -523,22 +554,27 @@ function UniMap({
                     <Maps.Geography
                       key={geo.rsmKey}
                       geography={geo}
+                      className="fill-muted stroke-border"
+                      strokeWidth={0.5}
                       style={{
-                        default: { fill: "hsl(var(--muted))", stroke: "hsl(var(--border))", strokeWidth: 0.5, outline: "none" },
-                        hover: { fill: "hsl(var(--muted))", outline: "none" },
-                        pressed: { fill: "hsl(var(--muted))", outline: "none" },
+                        default: { outline: "none" },
+                        hover: { outline: "none" },
+                        pressed: { outline: "none" },
                       }}
                     />
                   ))
               }
             </Maps.Geographies>
 
-            {/* Plain dots */}
+            {/* Plain dots first */}
             {pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)).map(u => (
               <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
                 <circle
                   r={1.8}
-                  className="fill-muted-foreground/60 hover:fill-foreground cursor-pointer"
+                  className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity`}
+                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHovered(null)}
                   onClick={() => setSelected(u)}
                 />
               </Maps.Marker>
@@ -546,21 +582,33 @@ function UniMap({
             {/* Pipeline */}
             {pts.filter(u => pipeIds.has(u.id) && !favIds.has(u.id)).map(u => (
               <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                <circle r={6} className="fill-primary/25">
+                  <animate attributeName="r" from="3" to="7" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />
+                </circle>
                 <circle
                   r={3}
                   className="fill-primary cursor-pointer"
-                  stroke="hsl(var(--background))" strokeWidth={0.6}
+                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHovered(null)}
                   onClick={() => setSelected(u)}
                 />
               </Maps.Marker>
             ))}
-            {/* Favorites (top) */}
+            {/* Favorites on top */}
             {pts.filter(u => favIds.has(u.id)).map(u => (
               <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                <circle r={6.5} className="fill-accent/25">
+                  <animate attributeName="r" from="3.5" to="8" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />
+                </circle>
                 <circle
                   r={3.5}
                   className="fill-accent cursor-pointer"
-                  stroke="hsl(var(--background))" strokeWidth={0.6}
+                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHovered(null)}
                   onClick={() => setSelected(u)}
                 />
               </Maps.Marker>
@@ -569,17 +617,43 @@ function UniMap({
             {/* Selected pulse */}
             {selected && selected.latitude != null && selected.longitude != null && (
               <Maps.Marker coordinates={[Number(selected.longitude), Number(selected.latitude)]}>
-                <circle r={8} fill="none" stroke="hsl(var(--primary))" strokeWidth={1.5} opacity={0.6}>
-                  <animate attributeName="r" from="5" to="13" dur="1.2s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.7" to="0" dur="1.2s" repeatCount="indefinite" />
+                <circle r={9} className="fill-none stroke-primary" strokeWidth={1.5} opacity={0.7}>
+                  <animate attributeName="r" from="5" to="14" dur="1.2s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.8" to="0" dur="1.2s" repeatCount="indefinite" />
                 </circle>
-                <circle r={4} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={1} />
               </Maps.Marker>
             )}
           </Maps.ComposableMap>
         )}
 
-        {/* Selected info card overlay with actions */}
+        {/* Hover tooltip */}
+        {hovered && !selected && (
+          <div
+            className="pointer-events-none fixed z-50 bg-popover text-popover-foreground border border-border rounded-md shadow-lg px-2.5 py-1.5 text-xs"
+            style={{ left: hovered.x + 12, top: hovered.y + 12 }}
+          >
+            <div className="font-semibold">{hovered.u.name}</div>
+            <div className="text-muted-foreground">
+              {[hovered.u.state, hovered.u.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
+              {hovered.u.division && hovered.u.division !== "NONE" ? ` · ${hovered.u.division.replace("_", " ")}` : ""}
+            </div>
+            <div className="mt-1 flex items-center gap-1.5">
+              <div className="h-1 w-16 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full ${
+                    hovered.u.acceptance_chance === "high" ? "bg-success w-full" :
+                    hovered.u.acceptance_chance === "low" ? "bg-destructive w-1/4" : "bg-warning w-2/3"
+                  }`}
+                />
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {hovered.u.acceptance_chance === "high" ? "Alta" : hovered.u.acceptance_chance === "low" ? "Baixa" : "Média"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Selected info card overlay */}
         {selected && (
           <div className="absolute bottom-3 left-3 right-3 md:left-auto md:right-3 md:max-w-sm">
             <Card className="p-3 shadow-elegant border-primary/20">
@@ -593,7 +667,18 @@ function UniMap({
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="secondary" className="text-[10px]">{selected.type === "community_college" ? "Community" : selected.type === "college" ? "College" : "University"}</Badge>
                     <Badge variant="outline" className="text-[10px]">{selected.nature === "public" ? "Pública" : "Privada"}</Badge>
+                    {selected.division && selected.division !== "NONE" && <Badge variant="outline" className="text-[10px]">{selected.division.replace("_", " ")}</Badge>}
                     {selected.scholarship_available && <Badge className="bg-success text-success-foreground text-[10px]">Bolsa</Badge>}
+                  </div>
+                  <div className="mt-2 text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />${selected.estimated_cost_usd?.toLocaleString() ?? "—"}/ano</span>
+                    <span>·</span>
+                    <span>Chance: <span className={
+                      selected.acceptance_chance === "high" ? "text-success font-medium" :
+                      selected.acceptance_chance === "low" ? "text-destructive font-medium" : "text-warning font-medium"
+                    }>
+                      {selected.acceptance_chance === "high" ? "Alta" : selected.acceptance_chance === "low" ? "Baixa" : "Média"}
+                    </span></span>
                   </div>
                 </div>
                 <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0">
@@ -627,7 +712,7 @@ function UniMap({
       </div>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        Toque em um ponto para ver a universidade. Filtros aplicam ao mapa.
+        Passe o mouse para detalhes · Clique para ações · Filtros aplicam ao mapa
       </p>
     </Card>
   );
