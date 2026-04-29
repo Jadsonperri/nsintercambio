@@ -415,7 +415,13 @@ function FaculdadesPage() {
 
         {/* MAPA */}
         <TabsContent value="mapa" className="mt-0">
-          <UniMap unis={filtered} favIds={favIds} pipeIds={pipeIds} />
+          <UniMap
+            unis={filtered}
+            favIds={favIds}
+            pipeIds={pipeIds}
+            onToggleFav={toggleFav}
+            onAddPipeline={addToPipeline}
+          />
         </TabsContent>
       </Tabs>
     </div>
