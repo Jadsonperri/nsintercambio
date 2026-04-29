@@ -193,9 +193,9 @@ function FaculdadesPage() {
             <SlidersHorizontal className="h-4 w-4" />
             <span className="hidden sm:inline">Filtros</span>
             {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-primary-foreground/20 text-current">
+              <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${filtersOpen ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
                 {activeFilterCount}
-              </Badge>
+              </span>
             )}
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
           </Button>
