@@ -251,6 +251,38 @@ function FaculdadesPage() {
 
         {/* RESULTADOS */}
         <TabsContent value="resultados" className="space-y-5 mt-0">
+          {/* Mini painel lateral: resumo de favoritos + pipeline */}
+          {(favoritesList.length > 0 || pipeIds.size > 0) && (
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Card className="p-4 flex items-center gap-3 border-accent/30 bg-accent/5">
+                <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <Star className="h-5 w-5 fill-accent text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-muted-foreground">Favoritas</div>
+                  <div className="font-semibold">{favoritesList.length} universidade{favoritesList.length !== 1 ? "s" : ""}</div>
+                  {favoritesList.length > 0 && (
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {favoritesList.slice(0, 2).map(u => u.name).join(", ")}{favoritesList.length > 2 ? ` +${favoritesList.length - 2}` : ""}
+                    </div>
+                  )}
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3 border-primary/30 bg-primary/5">
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-muted-foreground">No pipeline</div>
+                  <div className="font-semibold">{pipeIds.size} universidade{pipeIds.size !== 1 ? "s" : ""}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {pipeIds.size > 0 ? "Acompanhe na aba Execução" : "Nenhuma ainda"}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2">
