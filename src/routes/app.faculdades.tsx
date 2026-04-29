@@ -428,29 +428,34 @@ function FaculdadesPage() {
   );
 }
 
-/* ---------------- Lightweight SVG Map ---------------- */
-function UniMap({ unis, favIds, pipeIds }: { unis: Uni[]; favIds: Set<string>; pipeIds: Set<string> }) {
+/* ---------------- Lightweight Geographic Map ---------------- */
+const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+function UniMap({
+  unis, favIds, pipeIds, onToggleFav, onAddPipeline,
+}: {
+  unis: Uni[]; favIds: Set<string>; pipeIds: Set<string>;
+  onToggleFav: (uId: string) => Promise<void>;
+  onAddPipeline: (uId: string) => Promise<void>;
+}) {
   const [selected, setSelected] = useState<Uni | null>(null);
+  const [Maps, setMaps] = useState<typeof import("react-simple-maps") | null>(null);
 
-  // Bounding box covering continental USA + Canada
-  // lon: -140 .. -52  | lat: 24 .. 70
-  const W = 900, H = 520;
-  const LON_MIN = -140, LON_MAX = -52;
-  const LAT_MIN = 24, LAT_MAX = 70;
+  // Lazy-load to keep initial bundle light
+  useEffect(() => {
+    let mounted = true;
+    import("react-simple-maps").then(m => { if (mounted) setMaps(m); });
+    return () => { mounted = false; };
+  }, []);
 
-  const project = (lat: number, lon: number) => {
-    const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * W;
-    const y = H - ((lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * H;
-    return { x, y };
-  };
-
-  const pts = useMemo(() => unis
-    .filter(u => u.latitude != null && u.longitude != null)
-    .map(u => ({ u, ...project(Number(u.latitude), Number(u.longitude)) })), [unis]);
+  const pts = useMemo(
+    () => unis.filter(u => u.latitude != null && u.longitude != null),
+    [unis]
+  );
 
   const total = pts.length;
-  const favCount = pts.filter(p => favIds.has(p.u.id)).length;
-  const pipeCount = pts.filter(p => pipeIds.has(p.u.id)).length;
+  const favCount = pts.filter(u => favIds.has(u.id)).length;
+  const pipeCount = pts.filter(u => pipeIds.has(u.id)).length;
 
   return (
     <Card className="p-4 space-y-3">
@@ -465,78 +470,89 @@ function UniMap({ unis, favIds, pipeIds }: { unis: Uni[]; favIds: Set<string>; p
         )}
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/30">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="w-full h-auto block"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* Background grid */}
-          <defs>
-            <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
-              <path d="M 45 0 L 0 0 0 45" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.4" />
-            </pattern>
-          </defs>
-          <rect width={W} height={H} fill="url(#grid)" />
+      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/30" style={{ minHeight: 400 }}>
+        {!Maps ? (
+          <div className="flex items-center justify-center h-[400px] text-sm text-muted-foreground">
+            Carregando mapa...
+          </div>
+        ) : (
+          <Maps.ComposableMap
+            projection="geoAlbers"
+            projectionConfig={{ scale: 700, center: [-15, 8], rotate: [98, 0, 0] }}
+            width={900}
+            height={500}
+            style={{ width: "100%", height: "auto", display: "block" }}
+          >
+            <Maps.Geographies geography={GEO_URL}>
+              {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
+                geographies
+                  .filter(g => g.properties.name === "United States of America" || g.properties.name === "Canada")
+                  .map(geo => (
+                    <Maps.Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      style={{
+                        default: { fill: "hsl(var(--muted))", stroke: "hsl(var(--border))", strokeWidth: 0.5, outline: "none" },
+                        hover: { fill: "hsl(var(--muted))", outline: "none" },
+                        pressed: { fill: "hsl(var(--muted))", outline: "none" },
+                      }}
+                    />
+                  ))
+              }
+            </Maps.Geographies>
 
-          {/* Approximate landmass outline (very simplified) */}
-          <path
-            d="M 50,180 L 110,150 L 180,135 L 260,120 L 340,108 L 430,100 L 520,98 L 600,105 L 680,118 L 750,135 L 810,160 L 850,200 L 855,260 L 830,310 L 780,340 L 720,360 L 650,365 L 570,360 L 490,355 L 410,355 L 340,360 L 270,355 L 200,340 L 140,310 L 90,270 L 60,220 Z"
-            fill="hsl(var(--muted))"
-            stroke="hsl(var(--border))"
-            strokeWidth="1.2"
-            opacity="0.5"
-          />
+            {/* Plain dots */}
+            {pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)).map(u => (
+              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                <circle
+                  r={1.8}
+                  className="fill-muted-foreground/60 hover:fill-foreground cursor-pointer"
+                  onClick={() => setSelected(u)}
+                />
+              </Maps.Marker>
+            ))}
+            {/* Pipeline */}
+            {pts.filter(u => pipeIds.has(u.id) && !favIds.has(u.id)).map(u => (
+              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                <circle
+                  r={3}
+                  className="fill-primary cursor-pointer"
+                  stroke="hsl(var(--background))" strokeWidth={0.6}
+                  onClick={() => setSelected(u)}
+                />
+              </Maps.Marker>
+            ))}
+            {/* Favorites (top) */}
+            {pts.filter(u => favIds.has(u.id)).map(u => (
+              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                <circle
+                  r={3.5}
+                  className="fill-accent cursor-pointer"
+                  stroke="hsl(var(--background))" strokeWidth={0.6}
+                  onClick={() => setSelected(u)}
+                />
+              </Maps.Marker>
+            ))}
 
-          {/* Dots: render plain → pipeline → favorites for proper z-order */}
-          {pts.filter(p => !favIds.has(p.u.id) && !pipeIds.has(p.u.id)).map(p => (
-            <circle
-              key={p.u.id}
-              cx={p.x} cy={p.y} r={2}
-              className="fill-muted-foreground/60 hover:fill-foreground cursor-pointer"
-              onClick={() => setSelected(p.u)}
-            />
-          ))}
-          {pts.filter(p => pipeIds.has(p.u.id) && !favIds.has(p.u.id)).map(p => (
-            <circle
-              key={p.u.id}
-              cx={p.x} cy={p.y} r={3.5}
-              className="fill-primary cursor-pointer"
-              stroke="hsl(var(--background))" strokeWidth="0.8"
-              onClick={() => setSelected(p.u)}
-            />
-          ))}
-          {pts.filter(p => favIds.has(p.u.id)).map(p => (
-            <circle
-              key={p.u.id}
-              cx={p.x} cy={p.y} r={4}
-              className="fill-accent cursor-pointer"
-              stroke="hsl(var(--background))" strokeWidth="0.8"
-              onClick={() => setSelected(p.u)}
-            />
-          ))}
-
-          {/* Selection highlight */}
-          {selected && selected.latitude != null && selected.longitude != null && (() => {
-            const { x, y } = project(Number(selected.latitude), Number(selected.longitude));
-            return (
-              <g>
-                <circle cx={x} cy={y} r={9} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6">
-                  <animate attributeName="r" from="6" to="14" dur="1.2s" repeatCount="indefinite" />
+            {/* Selected pulse */}
+            {selected && selected.latitude != null && selected.longitude != null && (
+              <Maps.Marker coordinates={[Number(selected.longitude), Number(selected.latitude)]}>
+                <circle r={8} fill="none" stroke="hsl(var(--primary))" strokeWidth={1.5} opacity={0.6}>
+                  <animate attributeName="r" from="5" to="13" dur="1.2s" repeatCount="indefinite" />
                   <animate attributeName="opacity" from="0.7" to="0" dur="1.2s" repeatCount="indefinite" />
                 </circle>
-                <circle cx={x} cy={y} r={5} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth="1.5" />
-              </g>
-            );
-          })()}
-        </svg>
+                <circle r={4} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={1} />
+              </Maps.Marker>
+            )}
+          </Maps.ComposableMap>
+        )}
 
-        {/* Selected info card overlay */}
+        {/* Selected info card overlay with actions */}
         {selected && (
           <div className="absolute bottom-3 left-3 right-3 md:left-auto md:right-3 md:max-w-sm">
             <Card className="p-3 shadow-elegant border-primary/20">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-sm truncate">{selected.name}</h4>
                   <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                     <MapPin className="h-3 w-3" />
@@ -544,13 +560,34 @@ function UniMap({ unis, favIds, pipeIds }: { unis: Uni[]; favIds: Set<string>; p
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="secondary" className="text-[10px]">{selected.type === "community_college" ? "Community" : selected.type === "college" ? "College" : "University"}</Badge>
-                    {favIds.has(selected.id) && <Badge className="bg-accent text-accent-foreground text-[10px]">⭐ Favorita</Badge>}
-                    {pipeIds.has(selected.id) && <Badge className="bg-primary text-primary-foreground text-[10px]">No pipeline</Badge>}
+                    <Badge variant="outline" className="text-[10px]">{selected.nature === "public" ? "Pública" : "Privada"}</Badge>
+                    {selected.scholarship_available && <Badge className="bg-success text-success-foreground text-[10px]">Bolsa</Badge>}
                   </div>
                 </div>
                 <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0">
                   <X className="h-3.5 w-3.5" />
                 </button>
+              </div>
+
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant={favIds.has(selected.id) ? "secondary" : "outline"}
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => onToggleFav(selected.id)}
+                >
+                  <Star className={`h-3.5 w-3.5 mr-1 ${favIds.has(selected.id) ? "fill-accent text-accent" : ""}`} />
+                  {favIds.has(selected.id) ? "Favorita" : "Favoritar"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={pipeIds.has(selected.id) ? "secondary" : "default"}
+                  className="flex-1 h-8 text-xs"
+                  disabled={pipeIds.has(selected.id)}
+                  onClick={() => onAddPipeline(selected.id)}
+                >
+                  {pipeIds.has(selected.id) ? <><Check className="h-3.5 w-3.5 mr-1" /> Pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1" /> Pipeline</>}
+                </Button>
               </div>
             </Card>
           </div>
