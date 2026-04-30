@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -447,13 +447,15 @@ function FaculdadesPage() {
 
         {/* MAPA */}
         <TabsContent value="mapa" className="mt-0">
-          <UniMap
-            unis={filtered}
-            favIds={favIds}
-            pipeIds={pipeIds}
-            onToggleFav={toggleFav}
-            onAddPipeline={addToPipeline}
-          />
+          <MapErrorBoundary>
+            <UniMap
+              unis={filtered}
+              favIds={favIds}
+              pipeIds={pipeIds}
+              onToggleFav={toggleFav}
+              onAddPipeline={addToPipeline}
+            />
+          </MapErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
@@ -462,6 +464,25 @@ function FaculdadesPage() {
 
 /* ---------------- Lightweight Geographic Map ---------------- */
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+class MapErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error) { console.error("Map error:", error); }
+  render() {
+    if (this.state.error) {
+      return (
+        <Card className="p-6 text-center space-y-3">
+          <MapIcon className="h-10 w-10 mx-auto text-muted-foreground" />
+          <h3 className="font-semibold">Não foi possível carregar o mapa</h3>
+          <p className="text-sm text-muted-foreground">Use a aba Resultados ou Favoritos para visualizar as universidades.</p>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })}>Tentar novamente</Button>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function UniMap({
   unis, favIds, pipeIds, onToggleFav, onAddPipeline,
@@ -482,7 +503,11 @@ function UniMap({
   }, []);
 
   const ptsAll = useMemo(
-    () => unis.filter(u => u.latitude != null && u.longitude != null),
+    () => unis.filter(u => {
+      const lat = Number(u.latitude);
+      const lng = Number(u.longitude);
+      return Number.isFinite(lat) && Number.isFinite(lng) && lat >= 20 && lat <= 75 && lng >= -170 && lng <= -50;
+    }),
     [unis]
   );
 
@@ -540,8 +565,13 @@ function UniMap({
           </div>
         ) : (
           <Maps.ComposableMap
-            projection="geoAlbersUsa"
-            projectionConfig={{ scale: 1000 }}
+            projection="geoAlbers"
+            projectionConfig={{
+              rotate: [98, 0, 0],
+              center: [0, 48],
+              parallels: [29.5, 60],
+              scale: 700,
+            }}
             width={980}
             height={560}
             style={{ width: "100%", height: "auto", display: "block" }}
@@ -549,7 +579,7 @@ function UniMap({
             <Maps.Geographies geography={GEO_URL}>
               {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
                 geographies
-                  .filter(g => g.properties.name === "United States of America" || g.properties.name === "Canada")
+                  .filter(g => g.properties && (g.properties.name === "United States of America" || g.properties.name === "Canada"))
                   .map(geo => (
                     <Maps.Geography
                       key={geo.rsmKey}
