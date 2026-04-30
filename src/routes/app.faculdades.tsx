@@ -756,6 +756,7 @@ function UniMap({
                 </circle>
               </Maps.Marker>
             )}
+            </Maps.ZoomableGroup>
           </Maps.ComposableMap>
         )}
 
