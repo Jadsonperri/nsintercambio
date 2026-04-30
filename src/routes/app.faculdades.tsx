@@ -624,9 +624,35 @@ function UniMap({
           <TabBtn v="pipe" label="Pipeline" count={pipeCount} dotClass="bg-primary" />
           <TabBtn v="high" label="+ chance" count={highCount} dotClass="bg-success" />
         </div>
-        {selected && (
-          <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
-        )}
+        <div className="flex items-center gap-2">
+          <select
+            value={zoomState}
+            onChange={(e) => setZoomState(e.target.value)}
+            className="text-xs rounded-md border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="ALL">🌎 Todos os estados</option>
+            <optgroup label="Estados Unidos">
+              {Array.from(new Set(ptsAll.filter(u => u.country === "USA").map(u => u.state)))
+                .filter(s => s && STATE_CENTERS[s])
+                .sort()
+                .map(s => <option key={s} value={s}>{STATE_CENTERS[s]?.label ?? s}</option>)}
+            </optgroup>
+            <optgroup label="Canadá">
+              {Array.from(new Set(ptsAll.filter(u => u.country === "CANADA").map(u => u.state)))
+                .filter(s => s && STATE_CENTERS[s])
+                .sort()
+                .map(s => <option key={s} value={s}>{STATE_CENTERS[s]?.label ?? s}</option>)}
+            </optgroup>
+          </select>
+          {zoomState !== "ALL" && (
+            <button onClick={() => setZoomState("ALL")} className="text-xs text-muted-foreground hover:text-foreground underline">
+              resetar zoom
+            </button>
+          )}
+          {selected && (
+            <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
+          )}
+        </div>
       </div>
 
       <div className="relative w-full overflow-hidden rounded-lg border border-border bg-card" style={{ minHeight: 420 }}>
