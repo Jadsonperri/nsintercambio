@@ -465,6 +465,25 @@ function FaculdadesPage() {
 /* ---------------- Lightweight Geographic Map ---------------- */
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+class MapErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error) { console.error("Map error:", error); }
+  render() {
+    if (this.state.error) {
+      return (
+        <Card className="p-6 text-center space-y-3">
+          <MapIcon className="h-10 w-10 mx-auto text-muted-foreground" />
+          <h3 className="font-semibold">Não foi possível carregar o mapa</h3>
+          <p className="text-sm text-muted-foreground">Use a aba Resultados ou Favoritos para visualizar as universidades.</p>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })}>Tentar novamente</Button>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function UniMap({
   unis, favIds, pipeIds, onToggleFav, onAddPipeline,
 }: {
