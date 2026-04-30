@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -447,13 +447,15 @@ function FaculdadesPage() {
 
         {/* MAPA */}
         <TabsContent value="mapa" className="mt-0">
-          <UniMap
-            unis={filtered}
-            favIds={favIds}
-            pipeIds={pipeIds}
-            onToggleFav={toggleFav}
-            onAddPipeline={addToPipeline}
-          />
+          <MapErrorBoundary>
+            <UniMap
+              unis={filtered}
+              favIds={favIds}
+              pipeIds={pipeIds}
+              onToggleFav={toggleFav}
+              onAddPipeline={addToPipeline}
+            />
+          </MapErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
