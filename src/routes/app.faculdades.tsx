@@ -503,7 +503,11 @@ function UniMap({
   }, []);
 
   const ptsAll = useMemo(
-    () => unis.filter(u => u.latitude != null && u.longitude != null),
+    () => unis.filter(u => {
+      const lat = Number(u.latitude);
+      const lng = Number(u.longitude);
+      return Number.isFinite(lat) && Number.isFinite(lng) && lat >= 20 && lat <= 75 && lng >= -170 && lng <= -50;
+    }),
     [unis]
   );
 
