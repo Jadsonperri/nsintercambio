@@ -581,11 +581,13 @@ function UniMap({
   );
 
   const pts = useMemo(() => {
-    if (mapFilter === "fav") return ptsAll.filter(u => favIds.has(u.id));
-    if (mapFilter === "pipe") return ptsAll.filter(u => pipeIds.has(u.id));
-    if (mapFilter === "high") return ptsAll.filter(u => u.acceptance_chance === "high");
-    return ptsAll;
-  }, [ptsAll, mapFilter, favIds, pipeIds]);
+    let arr = ptsAll;
+    if (mapFilter === "fav") arr = arr.filter(u => favIds.has(u.id));
+    else if (mapFilter === "pipe") arr = arr.filter(u => pipeIds.has(u.id));
+    else if (mapFilter === "high") arr = arr.filter(u => u.acceptance_chance === "high");
+    if (zoomState !== "ALL") arr = arr.filter(u => u.state === zoomState);
+    return arr;
+  }, [ptsAll, mapFilter, favIds, pipeIds, zoomState]);
 
   const total = ptsAll.length;
   const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
