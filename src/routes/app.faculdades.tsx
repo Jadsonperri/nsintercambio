@@ -540,8 +540,13 @@ function UniMap({
           </div>
         ) : (
           <Maps.ComposableMap
-            projection="geoAlbersUsa"
-            projectionConfig={{ scale: 1000 }}
+            projection="geoAlbers"
+            projectionConfig={{
+              rotate: [98, 0, 0],
+              center: [0, 48],
+              parallels: [29.5, 60],
+              scale: 700,
+            }}
             width={980}
             height={560}
             style={{ width: "100%", height: "auto", display: "block" }}
@@ -549,7 +554,7 @@ function UniMap({
             <Maps.Geographies geography={GEO_URL}>
               {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
                 geographies
-                  .filter(g => g.properties.name === "United States of America" || g.properties.name === "Canada")
+                  .filter(g => g.properties && (g.properties.name === "United States of America" || g.properties.name === "Canada"))
                   .map(geo => (
                     <Maps.Geography
                       key={geo.rsmKey}
