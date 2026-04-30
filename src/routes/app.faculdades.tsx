@@ -673,6 +673,12 @@ function UniMap({
             height={560}
             style={{ width: "100%", height: "auto", display: "block" }}
           >
+            <Maps.ZoomableGroup
+              center={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].center : [-95, 50]}
+              zoom={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].zoom : 1}
+              minZoom={1}
+              maxZoom={12}
+            >
             <Maps.Geographies geography={GEO_URL}>
               {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
                 geographies
