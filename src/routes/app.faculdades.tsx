@@ -484,6 +484,74 @@ class MapErrorBoundary extends Component<{ children: ReactNode }, { error: Error
   }
 }
 
+// Centros aproximados [longitude, latitude] de estados/províncias com universidades
+const STATE_CENTERS: Record<string, { center: [number, number]; zoom: number; label: string }> = {
+  // EUA
+  CA: { center: [-119.4, 36.8], zoom: 3, label: "Califórnia" },
+  TX: { center: [-99.3, 31.0], zoom: 3, label: "Texas" },
+  FL: { center: [-81.5, 27.8], zoom: 3.5, label: "Flórida" },
+  NY: { center: [-75.5, 42.9], zoom: 4, label: "Nova York" },
+  PA: { center: [-77.2, 41.0], zoom: 4, label: "Pensilvânia" },
+  IL: { center: [-89.0, 40.0], zoom: 4, label: "Illinois" },
+  OH: { center: [-82.8, 40.4], zoom: 4.5, label: "Ohio" },
+  GA: { center: [-83.4, 32.6], zoom: 4, label: "Geórgia" },
+  NC: { center: [-79.0, 35.5], zoom: 4, label: "Carolina do Norte" },
+  MI: { center: [-85.4, 44.3], zoom: 3.5, label: "Michigan" },
+  MA: { center: [-71.8, 42.3], zoom: 6, label: "Massachusetts" },
+  WA: { center: [-120.7, 47.4], zoom: 4, label: "Washington" },
+  AZ: { center: [-111.6, 34.2], zoom: 3.5, label: "Arizona" },
+  CO: { center: [-105.5, 39.0], zoom: 4, label: "Colorado" },
+  IN: { center: [-86.2, 39.9], zoom: 4.5, label: "Indiana" },
+  TN: { center: [-86.5, 35.8], zoom: 4, label: "Tennessee" },
+  VA: { center: [-78.6, 37.5], zoom: 4, label: "Virgínia" },
+  NJ: { center: [-74.5, 40.2], zoom: 6, label: "Nova Jersey" },
+  WI: { center: [-89.7, 44.5], zoom: 4, label: "Wisconsin" },
+  MO: { center: [-92.5, 38.4], zoom: 4, label: "Missouri" },
+  MN: { center: [-94.3, 46.0], zoom: 3.5, label: "Minnesota" },
+  AL: { center: [-86.8, 32.8], zoom: 4.5, label: "Alabama" },
+  LA: { center: [-91.9, 31.0], zoom: 4, label: "Louisiana" },
+  KY: { center: [-84.6, 37.6], zoom: 4.5, label: "Kentucky" },
+  OR: { center: [-120.5, 43.9], zoom: 3.5, label: "Oregon" },
+  OK: { center: [-97.5, 35.6], zoom: 4, label: "Oklahoma" },
+  CT: { center: [-72.7, 41.6], zoom: 7, label: "Connecticut" },
+  IA: { center: [-93.5, 42.0], zoom: 4.5, label: "Iowa" },
+  MS: { center: [-89.7, 32.7], zoom: 4.5, label: "Mississippi" },
+  AR: { center: [-92.4, 34.8], zoom: 4.5, label: "Arkansas" },
+  KS: { center: [-98.4, 38.5], zoom: 4, label: "Kansas" },
+  UT: { center: [-111.5, 39.3], zoom: 4, label: "Utah" },
+  NV: { center: [-117.0, 39.0], zoom: 3.5, label: "Nevada" },
+  NM: { center: [-106.1, 34.4], zoom: 3.5, label: "Novo México" },
+  NE: { center: [-99.7, 41.5], zoom: 4, label: "Nebraska" },
+  WV: { center: [-80.6, 38.6], zoom: 5, label: "Virgínia Ocidental" },
+  ID: { center: [-114.7, 44.1], zoom: 3.5, label: "Idaho" },
+  HI: { center: [-157.5, 20.8], zoom: 5, label: "Havaí" },
+  ME: { center: [-69.2, 45.4], zoom: 4.5, label: "Maine" },
+  NH: { center: [-71.6, 43.7], zoom: 6, label: "New Hampshire" },
+  RI: { center: [-71.5, 41.7], zoom: 9, label: "Rhode Island" },
+  MT: { center: [-110.4, 47.0], zoom: 3, label: "Montana" },
+  SD: { center: [-99.9, 44.4], zoom: 4, label: "Dakota do Sul" },
+  ND: { center: [-100.5, 47.5], zoom: 4, label: "Dakota do Norte" },
+  AK: { center: [-152.4, 64.2], zoom: 1.8, label: "Alasca" },
+  DE: { center: [-75.5, 39.0], zoom: 8, label: "Delaware" },
+  VT: { center: [-72.7, 44.0], zoom: 6, label: "Vermont" },
+  WY: { center: [-107.3, 43.0], zoom: 3.5, label: "Wyoming" },
+  SC: { center: [-81.0, 33.9], zoom: 4.5, label: "Carolina do Sul" },
+  MD: { center: [-76.7, 39.0], zoom: 6, label: "Maryland" },
+  DC: { center: [-77.0, 38.9], zoom: 10, label: "Washington DC" },
+  // Canadá
+  ON: { center: [-85.3, 50.0], zoom: 2.5, label: "Ontário" },
+  QC: { center: [-71.8, 52.0], zoom: 2.5, label: "Quebec" },
+  BC: { center: [-125.0, 54.0], zoom: 2.5, label: "Colúmbia Britânica" },
+  AB: { center: [-115.0, 53.9], zoom: 3, label: "Alberta" },
+  MB: { center: [-98.7, 53.7], zoom: 2.8, label: "Manitoba" },
+  SK: { center: [-106.4, 54.0], zoom: 3, label: "Saskatchewan" },
+  NS: { center: [-63.7, 45.0], zoom: 4.5, label: "Nova Escócia" },
+  NB: { center: [-66.4, 46.5], zoom: 4.5, label: "Nova Brunswick" },
+  NL: { center: [-57.7, 53.1], zoom: 2.5, label: "Terra Nova" },
+  PE: { center: [-63.0, 46.4], zoom: 7, label: "Ilha do Príncipe Eduardo" },
+  YT: { center: [-135.0, 64.0], zoom: 2, label: "Yukon" },
+};
+
 function UniMap({
   unis, favIds, pipeIds, onToggleFav, onAddPipeline,
 }: {
@@ -494,6 +562,7 @@ function UniMap({
   const [selected, setSelected] = useState<Uni | null>(null);
   const [hovered, setHovered] = useState<{ u: Uni; x: number; y: number } | null>(null);
   const [mapFilter, setMapFilter] = useState<"all" | "fav" | "pipe" | "high">("all");
+  const [zoomState, setZoomState] = useState<string>("ALL");
   const [Maps, setMaps] = useState<typeof import("react-simple-maps") | null>(null);
 
   useEffect(() => {
@@ -512,11 +581,13 @@ function UniMap({
   );
 
   const pts = useMemo(() => {
-    if (mapFilter === "fav") return ptsAll.filter(u => favIds.has(u.id));
-    if (mapFilter === "pipe") return ptsAll.filter(u => pipeIds.has(u.id));
-    if (mapFilter === "high") return ptsAll.filter(u => u.acceptance_chance === "high");
-    return ptsAll;
-  }, [ptsAll, mapFilter, favIds, pipeIds]);
+    let arr = ptsAll;
+    if (mapFilter === "fav") arr = arr.filter(u => favIds.has(u.id));
+    else if (mapFilter === "pipe") arr = arr.filter(u => pipeIds.has(u.id));
+    else if (mapFilter === "high") arr = arr.filter(u => u.acceptance_chance === "high");
+    if (zoomState !== "ALL") arr = arr.filter(u => u.state === zoomState);
+    return arr;
+  }, [ptsAll, mapFilter, favIds, pipeIds, zoomState]);
 
   const total = ptsAll.length;
   const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
@@ -553,9 +624,35 @@ function UniMap({
           <TabBtn v="pipe" label="Pipeline" count={pipeCount} dotClass="bg-primary" />
           <TabBtn v="high" label="+ chance" count={highCount} dotClass="bg-success" />
         </div>
-        {selected && (
-          <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
-        )}
+        <div className="flex items-center gap-2">
+          <select
+            value={zoomState}
+            onChange={(e) => setZoomState(e.target.value)}
+            className="text-xs rounded-md border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="ALL">🌎 Todos os estados</option>
+            <optgroup label="Estados Unidos">
+              {Array.from(new Set(ptsAll.filter(u => u.country === "USA").map(u => u.state)))
+                .filter(s => s && STATE_CENTERS[s])
+                .sort()
+                .map(s => <option key={s} value={s}>{STATE_CENTERS[s]?.label ?? s}</option>)}
+            </optgroup>
+            <optgroup label="Canadá">
+              {Array.from(new Set(ptsAll.filter(u => u.country === "CANADA").map(u => u.state)))
+                .filter(s => s && STATE_CENTERS[s])
+                .sort()
+                .map(s => <option key={s} value={s}>{STATE_CENTERS[s]?.label ?? s}</option>)}
+            </optgroup>
+          </select>
+          {zoomState !== "ALL" && (
+            <button onClick={() => setZoomState("ALL")} className="text-xs text-muted-foreground hover:text-foreground underline">
+              resetar zoom
+            </button>
+          )}
+          {selected && (
+            <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
+          )}
+        </div>
       </div>
 
       <div className="relative w-full overflow-hidden rounded-lg border border-border bg-card" style={{ minHeight: 420 }}>
@@ -576,6 +673,12 @@ function UniMap({
             height={560}
             style={{ width: "100%", height: "auto", display: "block" }}
           >
+            <Maps.ZoomableGroup
+              center={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].center : [-95, 50]}
+              zoom={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].zoom : 1}
+              minZoom={1}
+              maxZoom={12}
+            >
             <Maps.Geographies geography={GEO_URL}>
               {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
                 geographies
@@ -653,6 +756,7 @@ function UniMap({
                 </circle>
               </Maps.Marker>
             )}
+            </Maps.ZoomableGroup>
           </Maps.ComposableMap>
         )}
 
