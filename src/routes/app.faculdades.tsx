@@ -741,19 +741,69 @@ function UniMap({
               }
             </Maps.Geographies>
 
-            {/* Plain dots first */}
-            {pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)).map(u => (
-              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                <circle
-                  r={1.8}
-                  className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity`}
-                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected(u)}
-                />
-              </Maps.Marker>
-            ))}
+            {/* Plain dots — clustered when zoomed out */}
+            {clustering ? (
+              clusters.map(c => {
+                const n = c.items.length;
+                if (n === 1) {
+                  const u = c.items[0];
+                  return (
+                    <Maps.Marker key={c.key} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                      <circle
+                        r={2.2}
+                        className={`${colorOf(u)} cursor-pointer hover:opacity-100`}
+                        onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                        onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                        onMouseLeave={() => setHovered(null)}
+                        onClick={() => setSelected(u)}
+                      />
+                    </Maps.Marker>
+                  );
+                }
+                const r = Math.min(11, 3 + Math.log2(n) * 1.6);
+                const hasHigh = c.items.some(u => u.acceptance_chance === "high");
+                const fillCls = hasHigh ? "fill-success" : "fill-muted-foreground/70";
+                return (
+                  <Maps.Marker key={c.key} coordinates={[c.lng, c.lat]}>
+                    <circle r={r + 2} className={`${fillCls} opacity-20`} />
+                    <circle
+                      r={r}
+                      className={`${fillCls} cursor-pointer stroke-background`}
+                      strokeWidth={0.6}
+                      onClick={() => {
+                        // zoom para o estado dominante do cluster
+                        const counts: Record<string, number> = {};
+                        for (const it of c.items) counts[it.state] = (counts[it.state] ?? 0) + 1;
+                        const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+                        if (top && STATE_CENTERS[top]) setZoomState(top);
+                      }}
+                    />
+                    <text
+                      textAnchor="middle"
+                      y={r * 0.35}
+                      className="fill-background pointer-events-none select-none"
+                      style={{ fontSize: Math.max(7, r * 0.85), fontWeight: 700 }}
+                    >
+                      {n}
+                    </text>
+                  </Maps.Marker>
+                );
+              })
+            ) : (
+              regularPts.map(u => (
+                <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                  <circle
+                    r={2.4}
+                    className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity stroke-background`}
+                    strokeWidth={0.4}
+                    onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                    onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHovered(null)}
+                    onClick={() => setSelected(u)}
+                  />
+                </Maps.Marker>
+              ))
+            )}
             {/* Pipeline */}
             {pts.filter(u => pipeIds.has(u.id) && !favIds.has(u.id)).map(u => (
               <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
