@@ -114,7 +114,7 @@ function FaculdadesPage() {
     return Array.from(s).sort();
   }, [unis, country]);
 
-  const filtered = useMemo(() => unis.filter(u => {
+  const filteredRaw = useMemo(() => unis.filter(u => {
     if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !(u.city ?? "").toLowerCase().includes(search.toLowerCase())) return false;
     if (country !== "ALL" && u.country !== country) return false;
     if (type !== "ALL" && u.type !== type) return false;
@@ -124,7 +124,27 @@ function FaculdadesPage() {
     return true;
   }), [unis, search, country, type, division, state, scholarshipOnly]);
 
-  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly]);
+  const filtered = useMemo(() => {
+    const arr = [...filteredRaw];
+    const chanceRank = (c: string | null) => c === "high" ? 3 : c === "medium" ? 2 : c === "low" ? 1 : 0;
+    switch (sortBy) {
+      case "cost_asc": arr.sort((a, b) => (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity)); break;
+      case "cost_desc": arr.sort((a, b) => (b.estimated_cost_usd ?? -1) - (a.estimated_cost_usd ?? -1)); break;
+      case "chance": arr.sort((a, b) => chanceRank(b.acceptance_chance) - chanceRank(a.acceptance_chance)); break;
+      case "az": arr.sort((a, b) => a.name.localeCompare(b.name)); break;
+      default:
+        // recomendado: alta chance + bolsa primeiro, depois custo asc
+        arr.sort((a, b) => {
+          const sa = chanceRank(a.acceptance_chance) * 2 + (a.scholarship_available ? 1 : 0);
+          const sb = chanceRank(b.acceptance_chance) * 2 + (b.scholarship_available ? 1 : 0);
+          if (sb !== sa) return sb - sa;
+          return (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity);
+        });
+    }
+    return arr;
+  }, [filteredRaw, sortBy]);
+
+  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const favoritesList = useMemo(() => unis.filter(u => favIds.has(u.id)), [unis, favIds]);
