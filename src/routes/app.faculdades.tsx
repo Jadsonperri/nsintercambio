@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+
+const LeafletMap = lazy(() => import("@/components/colleges/LeafletMap"));
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -8,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List } from "lucide-react";
+import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List, LayoutGrid, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
+import { CollegeRecommendations } from "@/components/colleges/CollegeRecommendations";
 
 export const Route = createFileRoute("/app/faculdades")({ component: FaculdadesPage });
 
@@ -55,7 +58,9 @@ function FaculdadesPage() {
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
-  
+  const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   const [visibleCount, setVisibleCount] = useState(60);
   const [loading, setLoading] = useState(true);
 
@@ -109,7 +114,7 @@ function FaculdadesPage() {
     return Array.from(s).sort();
   }, [unis, country]);
 
-  const filtered = useMemo(() => unis.filter(u => {
+  const filteredRaw = useMemo(() => unis.filter(u => {
     if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !(u.city ?? "").toLowerCase().includes(search.toLowerCase())) return false;
     if (country !== "ALL" && u.country !== country) return false;
     if (type !== "ALL" && u.type !== type) return false;
@@ -119,7 +124,27 @@ function FaculdadesPage() {
     return true;
   }), [unis, search, country, type, division, state, scholarshipOnly]);
 
-  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly]);
+  const filtered = useMemo(() => {
+    const arr = [...filteredRaw];
+    const chanceRank = (c: string | null) => c === "high" ? 3 : c === "medium" ? 2 : c === "low" ? 1 : 0;
+    switch (sortBy) {
+      case "cost_asc": arr.sort((a, b) => (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity)); break;
+      case "cost_desc": arr.sort((a, b) => (b.estimated_cost_usd ?? -1) - (a.estimated_cost_usd ?? -1)); break;
+      case "chance": arr.sort((a, b) => chanceRank(b.acceptance_chance) - chanceRank(a.acceptance_chance)); break;
+      case "az": arr.sort((a, b) => a.name.localeCompare(b.name)); break;
+      default:
+        // recomendado: alta chance + bolsa primeiro, depois custo asc
+        arr.sort((a, b) => {
+          const sa = chanceRank(a.acceptance_chance) * 2 + (a.scholarship_available ? 1 : 0);
+          const sb = chanceRank(b.acceptance_chance) * 2 + (b.scholarship_available ? 1 : 0);
+          if (sb !== sa) return sb - sa;
+          return (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity);
+        });
+    }
+    return arr;
+  }, [filteredRaw, sortBy]);
+
+  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const favoritesList = useMemo(() => unis.filter(u => favIds.has(u.id)), [unis, favIds]);
@@ -154,6 +179,42 @@ function FaculdadesPage() {
     setPipeIds(prev => new Set(prev).add(uId));
     await supabase.from("pipeline").insert({ user_id: user.id, university_id: uId, status: "interest" });
     toast.success("Adicionada ao pipeline");
+  };
+
+  const UniRow = ({ u }: { u: Uni }) => {
+    const isFav = favIds.has(u.id);
+    const inPipe = pipeIds.has(u.id);
+    return (
+      <div className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth">
+        <div className="col-span-4 min-w-0">
+          <div className="font-medium text-sm truncate">{u.name}</div>
+          <div className="text-[11px] text-muted-foreground truncate">{[u.city, u.state].filter(Boolean).join(", ")}</div>
+        </div>
+        <div className="col-span-2 text-xs text-muted-foreground truncate">
+          {u.division && u.division !== "NONE" ? u.division.replace("_", " ") : "—"}
+        </div>
+        <div className="col-span-2 text-xs">
+          ${u.estimated_cost_usd?.toLocaleString() ?? "—"}
+          {u.scholarship_available && <span className="ml-1.5 text-success">• bolsa</span>}
+        </div>
+        <div className="col-span-2 text-xs">
+          <span className={
+            u.acceptance_chance === "high" ? "text-success font-medium" :
+            u.acceptance_chance === "low" ? "text-destructive font-medium" : "text-warning font-medium"
+          }>
+            {u.acceptance_chance === "high" ? "Alta" : u.acceptance_chance === "low" ? "Baixa" : "Média"}
+          </span>
+        </div>
+        <div className="col-span-2 flex items-center justify-end gap-1">
+          <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
+            <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+          </button>
+          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" disabled={inPipe} onClick={() => addToPipeline(u.id)}>
+            {inPipe ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
+    );
   };
 
 
@@ -412,7 +473,57 @@ function FaculdadesPage() {
             </div>
           </Card>
 
-          <div className="text-sm text-muted-foreground flex items-center justify-between">
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wide mr-1">Filtros:</span>
+              {country !== "ALL" && (
+                <button onClick={() => { setCountry("ALL"); setState("ALL"); }} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {COUNTRY_OPTIONS.find(o => o.v === country)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {type !== "ALL" && (
+                <button onClick={() => setType("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {TYPE_OPTIONS.find(o => o.v === type)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {division !== "ALL" && (
+                <button onClick={() => setDivision("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {DIVISION_OPTIONS.find(o => o.v === division)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {state !== "ALL" && (
+                <button onClick={() => setState("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {state} <X className="h-3 w-3" />
+                </button>
+              )}
+              {scholarshipOnly && (
+                <button onClick={() => setScholarshipOnly(false)} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-success/15 border border-success/40 text-foreground hover:bg-success/20">
+                  Com bolsa <X className="h-3 w-3" />
+                </button>
+              )}
+              <button onClick={clearFilters} className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1">limpar tudo</button>
+            </div>
+          )}
+
+          {/* AI Recommendations */}
+          {user && unis.length > 0 && (
+            <CollegeRecommendations
+              userId={user.id}
+              profile={{ fullName: user.user_metadata?.full_name }}
+              universities={unis.slice(0, 250).map(u => ({
+                id: u.id, name: u.name, state: u.state, country: u.country,
+                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
+                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
+              }))}
+              favIds={favIds}
+              pipeIds={pipeIds}
+              onToggleFav={(id) => { void toggleFav(id); }}
+              onAddPipeline={(id) => { void addToPipeline(id); }}
+            />
+          )}
+
+          <div className="text-sm text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
             <span>
               {loading ? "Carregando..." : (
                 <>
@@ -421,11 +532,49 @@ function FaculdadesPage() {
                 </>
               )}
             </span>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="h-8 pl-7 pr-7 rounded-md border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="recommended">Recomendado</option>
+                  <option value="cost_asc">Custo ↑</option>
+                  <option value="cost_desc">Custo ↓</option>
+                  <option value="chance">+ chance</option>
+                  <option value="az">A–Z</option>
+                </select>
+              </div>
+              <div className="inline-flex rounded-md border border-border overflow-hidden">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`h-8 px-2.5 text-xs flex items-center gap-1 transition-smooth ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`h-8 px-2.5 text-xs flex items-center gap-1 transition-smooth ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  <List className="h-3.5 w-3.5" /> Lista
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {visible.map(u => <UniCard key={u.id} u={u} />)}
-          </div>
+          {viewMode === "grid" ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visible.map(u => <UniCard key={u.id} u={u} />)}
+            </div>
+          ) : (
+            <Card className="p-0 overflow-hidden">
+              <div className="divide-y divide-border">
+                {visible.map(u => <UniRow key={u.id} u={u} />)}
+              </div>
+            </Card>
+          )}
 
           {!loading && filtered.length === 0 && (
             <Card className="p-12 text-center">
@@ -479,8 +628,7 @@ function FaculdadesPage() {
   );
 }
 
-/* ---------------- Lightweight Geographic Map ---------------- */
-const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+/* ---------------- Map (Leaflet/OSM) ---------------- */
 
 class MapErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -501,9 +649,7 @@ class MapErrorBoundary extends Component<{ children: ReactNode }, { error: Error
   }
 }
 
-// Centros aproximados [longitude, latitude] de estados/províncias com universidades
 const STATE_CENTERS: Record<string, { center: [number, number]; zoom: number; label: string }> = {
-  // EUA
   CA: { center: [-119.4, 36.8], zoom: 3, label: "Califórnia" },
   TX: { center: [-99.3, 31.0], zoom: 3, label: "Texas" },
   FL: { center: [-81.5, 27.8], zoom: 3.5, label: "Flórida" },
@@ -555,7 +701,6 @@ const STATE_CENTERS: Record<string, { center: [number, number]; zoom: number; la
   SC: { center: [-81.0, 33.9], zoom: 4.5, label: "Carolina do Sul" },
   MD: { center: [-76.7, 39.0], zoom: 6, label: "Maryland" },
   DC: { center: [-77.0, 38.9], zoom: 10, label: "Washington DC" },
-  // Canadá
   ON: { center: [-85.3, 50.0], zoom: 2.5, label: "Ontário" },
   QC: { center: [-71.8, 52.0], zoom: 2.5, label: "Quebec" },
   BC: { center: [-125.0, 54.0], zoom: 2.5, label: "Colúmbia Britânica" },
@@ -576,28 +721,20 @@ function UniMap({
   onToggleFav: (uId: string) => Promise<void>;
   onAddPipeline: (uId: string) => Promise<void>;
 }) {
-  const [selected, setSelected] = useState<Uni | null>(null);
-  const [hovered, setHovered] = useState<{ u: Uni; x: number; y: number } | null>(null);
   const [mapFilter, setMapFilter] = useState<"all" | "fav" | "pipe" | "high">("all");
   const [zoomState, setZoomState] = useState<string>("ALL");
-  const [Maps, setMaps] = useState<typeof import("react-simple-maps") | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    import("react-simple-maps").then(m => { if (mounted) setMaps(m); });
-    return () => { mounted = false; };
-  }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const ptsAll = useMemo(
     () => unis.filter(u => {
-      const lat = Number(u.latitude);
-      const lng = Number(u.longitude);
-      return Number.isFinite(lat) && Number.isFinite(lng) && lat >= 20 && lat <= 75 && lng >= -170 && lng <= -50;
+      const lat = Number(u.latitude); const lng = Number(u.longitude);
+      return Number.isFinite(lat) && Number.isFinite(lng);
     }),
     [unis]
   );
 
-  const pts = useMemo(() => {
+  const filteredForMap = useMemo(() => {
     let arr = ptsAll;
     if (mapFilter === "fav") arr = arr.filter(u => favIds.has(u.id));
     else if (mapFilter === "pipe") arr = arr.filter(u => pipeIds.has(u.id));
@@ -606,42 +743,10 @@ function UniMap({
     return arr;
   }, [ptsAll, mapFilter, favIds, pipeIds, zoomState]);
 
-  // Pontos "regulares" (não fav, não pipeline) — candidatos a clustering
-  const regularPts = useMemo(() => pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)), [pts, favIds, pipeIds]);
-
-  // Clustering por grid quando zoom geral (ALL). Em zoom de estado, mostra individual.
-  const clustering = zoomState === "ALL";
-  const GRID = 1.6; // graus
-  const clusters = useMemo(() => {
-    if (!clustering) return [] as Array<{ key: string; lng: number; lat: number; items: Uni[] }>;
-    const map = new Map<string, { lng: number; lat: number; items: Uni[] }>();
-    for (const u of regularPts) {
-      const lat = Number(u.latitude); const lng = Number(u.longitude);
-      const gx = Math.round(lng / GRID); const gy = Math.round(lat / GRID);
-      const k = `${gx}:${gy}`;
-      const cur = map.get(k);
-      if (cur) { cur.items.push(u); cur.lng += lng; cur.lat += lat; }
-      else map.set(k, { lng, lat, items: [u] });
-    }
-    return Array.from(map.entries()).map(([key, v]) => ({
-      key,
-      lng: v.lng / v.items.length,
-      lat: v.lat / v.items.length,
-      items: v.items,
-    }));
-  }, [regularPts, clustering]);
-
   const total = ptsAll.length;
   const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
   const pipeCount = ptsAll.filter(u => pipeIds.has(u.id)).length;
   const highCount = ptsAll.filter(u => u.acceptance_chance === "high").length;
-
-  const colorOf = (u: Uni) => {
-    if (favIds.has(u.id)) return "fill-accent";
-    if (pipeIds.has(u.id)) return "fill-primary";
-    if (u.acceptance_chance === "high") return "fill-success";
-    return "fill-muted-foreground/50";
-  };
 
   const TabBtn = ({ v, label, count, dotClass }: { v: typeof mapFilter; label: string; count: number; dotClass: string }) => (
     <button
@@ -691,254 +796,27 @@ function UniMap({
               resetar zoom
             </button>
           )}
-          {selected && (
-            <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground underline">limpar seleção</button>
-          )}
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-card" style={{ minHeight: 420 }}>
-        {!Maps ? (
-          <div className="flex items-center justify-center h-[420px] text-sm text-muted-foreground">
-            Carregando mapa...
-          </div>
-        ) : (
-          <Maps.ComposableMap
-            projection="geoAlbers"
-            projectionConfig={{
-              rotate: [98, 0, 0],
-              center: [0, 48],
-              parallels: [29.5, 60],
-              scale: 700,
-            }}
-            width={980}
-            height={560}
-            style={{ width: "100%", height: "auto", display: "block" }}
-          >
-            <Maps.ZoomableGroup
-              center={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].center : [-95, 50]}
-              zoom={zoomState !== "ALL" && STATE_CENTERS[zoomState] ? STATE_CENTERS[zoomState].zoom : 1}
-              minZoom={1}
-              maxZoom={12}
-            >
-            <Maps.Geographies geography={GEO_URL}>
-              {({ geographies }: { geographies: Array<{ rsmKey: string; properties: { name: string } }> }) =>
-                geographies
-                  .filter(g => g.properties && (g.properties.name === "United States of America" || g.properties.name === "Canada"))
-                  .map(geo => (
-                    <Maps.Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      className="fill-muted stroke-border"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: "none" },
-                        hover: { outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  ))
-              }
-            </Maps.Geographies>
-
-            {/* Plain dots — clustered when zoomed out */}
-            {clustering ? (
-              clusters.map(c => {
-                const n = c.items.length;
-                if (n === 1) {
-                  const u = c.items[0];
-                  return (
-                    <Maps.Marker key={c.key} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                      <circle
-                        r={2.2}
-                        className={`${colorOf(u)} cursor-pointer hover:opacity-100`}
-                        onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                        onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                        onMouseLeave={() => setHovered(null)}
-                        onClick={() => setSelected(u)}
-                      />
-                    </Maps.Marker>
-                  );
-                }
-                const r = Math.min(11, 3 + Math.log2(n) * 1.6);
-                const hasHigh = c.items.some(u => u.acceptance_chance === "high");
-                const fillCls = hasHigh ? "fill-success" : "fill-muted-foreground/70";
-                return (
-                  <Maps.Marker key={c.key} coordinates={[c.lng, c.lat]}>
-                    <circle r={r + 2} className={`${fillCls} opacity-20`} />
-                    <circle
-                      r={r}
-                      className={`${fillCls} cursor-pointer stroke-background`}
-                      strokeWidth={0.6}
-                      onClick={() => {
-                        // zoom para o estado dominante do cluster
-                        const counts: Record<string, number> = {};
-                        for (const it of c.items) counts[it.state] = (counts[it.state] ?? 0) + 1;
-                        const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-                        if (top && STATE_CENTERS[top]) setZoomState(top);
-                      }}
-                    />
-                    <text
-                      textAnchor="middle"
-                      y={r * 0.35}
-                      className="fill-background pointer-events-none select-none"
-                      style={{ fontSize: Math.max(7, r * 0.85), fontWeight: 700 }}
-                    >
-                      {n}
-                    </text>
-                  </Maps.Marker>
-                );
-              })
-            ) : (
-              regularPts.map(u => (
-                <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                  <circle
-                    r={2.4}
-                    className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity stroke-background`}
-                    strokeWidth={0.4}
-                    onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                    onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHovered(null)}
-                    onClick={() => setSelected(u)}
-                  />
-                </Maps.Marker>
-              ))
-            )}
-            {/* Pipeline */}
-            {pts.filter(u => pipeIds.has(u.id) && !favIds.has(u.id)).map(u => (
-              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                <circle r={6} className="fill-primary/25">
-                  <animate attributeName="r" from="3" to="7" dur="1.6s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />
-                </circle>
-                <circle
-                  r={3}
-                  className="fill-primary cursor-pointer"
-                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected(u)}
-                />
-              </Maps.Marker>
-            ))}
-            {/* Favorites on top */}
-            {pts.filter(u => favIds.has(u.id)).map(u => (
-              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                <circle r={6.5} className="fill-accent/25">
-                  <animate attributeName="r" from="3.5" to="8" dur="1.6s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />
-                </circle>
-                <circle
-                  r={3.5}
-                  className="fill-accent cursor-pointer"
-                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected(u)}
-                />
-              </Maps.Marker>
-            ))}
-
-            {/* Selected pulse */}
-            {selected && selected.latitude != null && selected.longitude != null && (
-              <Maps.Marker coordinates={[Number(selected.longitude), Number(selected.latitude)]}>
-                <circle r={9} className="fill-none stroke-primary" strokeWidth={1.5} opacity={0.7}>
-                  <animate attributeName="r" from="5" to="14" dur="1.2s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.8" to="0" dur="1.2s" repeatCount="indefinite" />
-                </circle>
-              </Maps.Marker>
-            )}
-            </Maps.ZoomableGroup>
-          </Maps.ComposableMap>
-        )}
-
-        {/* Hover tooltip */}
-        {hovered && !selected && (
-          <div
-            className="pointer-events-none fixed z-50 bg-popover text-popover-foreground border border-border rounded-md shadow-lg px-2.5 py-1.5 text-xs"
-            style={{ left: hovered.x + 12, top: hovered.y + 12 }}
-          >
-            <div className="font-semibold">{hovered.u.name}</div>
-            <div className="text-muted-foreground">
-              {[hovered.u.state, hovered.u.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
-              {hovered.u.division && hovered.u.division !== "NONE" ? ` · ${hovered.u.division.replace("_", " ")}` : ""}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <div className="h-1 w-16 rounded-full bg-muted overflow-hidden">
-                <div
-                  className={`h-full ${
-                    hovered.u.acceptance_chance === "high" ? "bg-success w-full" :
-                    hovered.u.acceptance_chance === "low" ? "bg-destructive w-1/4" : "bg-warning w-2/3"
-                  }`}
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                {hovered.u.acceptance_chance === "high" ? "Alta" : hovered.u.acceptance_chance === "low" ? "Baixa" : "Média"}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Selected info card overlay */}
-        {selected && (
-          <div className="absolute bottom-3 left-3 right-3 md:left-auto md:right-3 md:max-w-sm">
-            <Card className="p-3 shadow-elegant border-primary/20">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-sm truncate">{selected.name}</h4>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <MapPin className="h-3 w-3" />
-                    {[selected.city, selected.state, selected.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <Badge variant="secondary" className="text-[10px]">{selected.type === "community_college" ? "Community" : selected.type === "college" ? "College" : "University"}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{selected.nature === "public" ? "Pública" : "Privada"}</Badge>
-                    {selected.division && selected.division !== "NONE" && <Badge variant="outline" className="text-[10px]">{selected.division.replace("_", " ")}</Badge>}
-                    {selected.scholarship_available && <Badge className="bg-success text-success-foreground text-[10px]">Bolsa</Badge>}
-                  </div>
-                  <div className="mt-2 text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />${selected.estimated_cost_usd?.toLocaleString() ?? "—"}/ano</span>
-                    <span>·</span>
-                    <span>Chance: <span className={
-                      selected.acceptance_chance === "high" ? "text-success font-medium" :
-                      selected.acceptance_chance === "low" ? "text-destructive font-medium" : "text-warning font-medium"
-                    }>
-                      {selected.acceptance_chance === "high" ? "Alta" : selected.acceptance_chance === "low" ? "Baixa" : "Média"}
-                    </span></span>
-                  </div>
-                </div>
-                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  variant={favIds.has(selected.id) ? "secondary" : "outline"}
-                  className="flex-1 h-8 text-xs"
-                  onClick={() => onToggleFav(selected.id)}
-                >
-                  <Star className={`h-3.5 w-3.5 mr-1 ${favIds.has(selected.id) ? "fill-accent text-accent" : ""}`} />
-                  {favIds.has(selected.id) ? "Favorita" : "Favoritar"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={pipeIds.has(selected.id) ? "secondary" : "default"}
-                  className="flex-1 h-8 text-xs"
-                  disabled={pipeIds.has(selected.id)}
-                  onClick={() => onAddPipeline(selected.id)}
-                >
-                  {pipeIds.has(selected.id) ? <><Check className="h-3.5 w-3.5 mr-1" /> Pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1" /> Pipeline</>}
-                </Button>
-              </div>
-            </Card>
-          </div>
-        )}
-      </div>
+      {mounted ? (
+        <Suspense fallback={<div className="h-[480px] flex items-center justify-center text-sm text-muted-foreground border border-border rounded-lg">Carregando mapa...</div>}>
+          <LeafletMap
+            unis={filteredForMap}
+            favIds={favIds}
+            pipeIds={pipeIds}
+            onToggleFav={(id) => { void onToggleFav(id); }}
+            onAddPipeline={(id) => { void onAddPipeline(id); }}
+            zoomState={zoomState}
+            stateCenters={STATE_CENTERS}
+          />
+        </Suspense>
+      ) : (
+        <div className="h-[480px] flex items-center justify-center text-sm text-muted-foreground border border-border rounded-lg">Inicializando...</div>
+      )}
 
       <p className="text-[11px] text-muted-foreground text-center">
-        Passe o mouse para detalhes · Clique para ações · Filtros aplicam ao mapa
+        Clique nos pontos para ver detalhes · Pontos laranja = favoritas · Lilás = pipeline · Clusters agrupam pontos próximos
       </p>
     </Card>
   );
