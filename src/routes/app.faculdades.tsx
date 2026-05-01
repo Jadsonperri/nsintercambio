@@ -437,7 +437,57 @@ function FaculdadesPage() {
             </div>
           </Card>
 
-          <div className="text-sm text-muted-foreground flex items-center justify-between">
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wide mr-1">Filtros:</span>
+              {country !== "ALL" && (
+                <button onClick={() => { setCountry("ALL"); setState("ALL"); }} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {COUNTRY_OPTIONS.find(o => o.v === country)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {type !== "ALL" && (
+                <button onClick={() => setType("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {TYPE_OPTIONS.find(o => o.v === type)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {division !== "ALL" && (
+                <button onClick={() => setDivision("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {DIVISION_OPTIONS.find(o => o.v === division)?.l} <X className="h-3 w-3" />
+                </button>
+              )}
+              {state !== "ALL" && (
+                <button onClick={() => setState("ALL")} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-primary/10 border border-primary/30 text-foreground hover:bg-primary/15">
+                  {state} <X className="h-3 w-3" />
+                </button>
+              )}
+              {scholarshipOnly && (
+                <button onClick={() => setScholarshipOnly(false)} className="inline-flex items-center gap-1 h-6 pl-2 pr-1.5 rounded-full text-[11px] bg-success/15 border border-success/40 text-foreground hover:bg-success/20">
+                  Com bolsa <X className="h-3 w-3" />
+                </button>
+              )}
+              <button onClick={clearFilters} className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1">limpar tudo</button>
+            </div>
+          )}
+
+          {/* AI Recommendations */}
+          {user && unis.length > 0 && (
+            <CollegeRecommendations
+              userId={user.id}
+              profile={{ fullName: user.user_metadata?.full_name }}
+              universities={unis.slice(0, 250).map(u => ({
+                id: u.id, name: u.name, state: u.state, country: u.country,
+                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
+                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
+              }))}
+              favIds={favIds}
+              pipeIds={pipeIds}
+              onToggleFav={(id) => { void toggleFav(id); }}
+              onAddPipeline={(id) => { void addToPipeline(id); }}
+            />
+          )}
+
+          <div className="text-sm text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
             <span>
               {loading ? "Carregando..." : (
                 <>
@@ -446,11 +496,49 @@ function FaculdadesPage() {
                 </>
               )}
             </span>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="h-8 pl-7 pr-7 rounded-md border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="recommended">Recomendado</option>
+                  <option value="cost_asc">Custo ↑</option>
+                  <option value="cost_desc">Custo ↓</option>
+                  <option value="chance">+ chance</option>
+                  <option value="az">A–Z</option>
+                </select>
+              </div>
+              <div className="inline-flex rounded-md border border-border overflow-hidden">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`h-8 px-2.5 text-xs flex items-center gap-1 transition-smooth ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`h-8 px-2.5 text-xs flex items-center gap-1 transition-smooth ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  <List className="h-3.5 w-3.5" /> Lista
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {visible.map(u => <UniCard key={u.id} u={u} />)}
-          </div>
+          {viewMode === "grid" ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visible.map(u => <UniCard key={u.id} u={u} />)}
+            </div>
+          ) : (
+            <Card className="p-0 overflow-hidden">
+              <div className="divide-y divide-border">
+                {visible.map(u => <UniRow key={u.id} u={u} />)}
+              </div>
+            </Card>
+          )}
 
           {!loading && filtered.length === 0 && (
             <Card className="p-12 text-center">
