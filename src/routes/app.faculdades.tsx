@@ -58,7 +58,9 @@ function FaculdadesPage() {
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
-  
+  const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   const [visibleCount, setVisibleCount] = useState(60);
   const [loading, setLoading] = useState(true);
 
