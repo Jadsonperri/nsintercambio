@@ -156,18 +156,6 @@ function FaculdadesPage() {
     toast.success("Adicionada ao pipeline");
   };
 
-  const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-smooth border ${
-        active
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-          : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
-  );
 
   const FilterDropdown = ({ icon: Icon, label, value, onClear, children }: { icon: typeof Globe; label: string; value: string | null; onClear: () => void; children: React.ReactNode }) => {
     const active = value !== null;
