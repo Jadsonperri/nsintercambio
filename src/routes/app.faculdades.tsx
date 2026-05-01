@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +55,7 @@ function FaculdadesPage() {
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  
   const [visibleCount, setVisibleCount] = useState(60);
   const [loading, setLoading] = useState(true);
 
@@ -155,26 +156,58 @@ function FaculdadesPage() {
     toast.success("Adicionada ao pipeline");
   };
 
-  const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+
+  const FilterDropdown = ({ icon: Icon, label, value, onClear, children }: { icon: typeof Globe; label: string; value: string | null; onClear: () => void; children: React.ReactNode }) => {
+    const active = value !== null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-xs font-medium transition-smooth ${
+              active
+                ? "bg-primary/10 border-primary/40 text-foreground"
+                : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span>{label}</span>
+            {active && (
+              <>
+                <span className="text-foreground">·</span>
+                <span className="text-primary font-semibold max-w-[110px] truncate">{value}</span>
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClear(); }}
+                  className="ml-0.5 -mr-1 p-0.5 rounded-full hover:bg-background/50"
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              </>
+            )}
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto min-w-[220px] p-2">
+          <div className="text-[11px] font-semibold text-muted-foreground tracking-wide uppercase px-1 pb-2">{label}</div>
+          {children}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  const OptionRow = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-smooth border ${
+      className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium transition-smooth flex items-center justify-between gap-2 ${
         active
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-          : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground hover:bg-muted"
       }`}
     >
-      {children}
+      <span className="truncate">{children}</span>
+      {active && <Check className="h-3.5 w-3.5 shrink-0" />}
     </button>
-  );
-
-  const FilterSection = ({ icon: Icon, label, children }: { icon: typeof Globe; label: string; children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <div className="text-[11px] font-semibold text-muted-foreground tracking-wide uppercase flex items-center gap-1.5">
-        <Icon className="h-3 w-3" /> {label}
-      </div>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
   );
 
   const UniCard = ({ u }: { u: Uni }) => {
@@ -285,8 +318,8 @@ function FaculdadesPage() {
 
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar universidade ou cidade..."
@@ -303,96 +336,80 @@ function FaculdadesPage() {
                   </button>
                 )}
               </div>
-              <Button
-                variant={filtersOpen ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFiltersOpen(o => !o)}
-                className="gap-2 shrink-0"
+
+              <FilterDropdown
+                icon={Globe}
+                label="País"
+                value={country === "ALL" ? null : COUNTRY_OPTIONS.find(o => o.v === country)?.l ?? null}
+                onClear={() => { setCountry("ALL"); setState("ALL"); }}
               >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Filtros</span>
-                {activeFilterCount > 0 && (
-                  <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${filtersOpen ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
-                    {activeFilterCount}
-                  </span>
-                )}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-              </Button>
-            </div>
-
-            {activeFilterCount > 0 && (
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {country !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {COUNTRY_OPTIONS.find(o => o.v === country)?.l}
-                    <button onClick={() => setCountry("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {type !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {TYPE_OPTIONS.find(o => o.v === type)?.l}
-                    <button onClick={() => setType("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {division !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {DIVISION_OPTIONS.find(o => o.v === division)?.l}
-                    <button onClick={() => setDivision("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {state !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {state}
-                    <button onClick={() => setState("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {scholarshipOnly && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    Com bolsa
-                    <button onClick={() => setScholarshipOnly(false)} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-1">
-                  limpar tudo
-                </button>
-              </div>
-            )}
-
-            {filtersOpen && (
-              <div className="pt-3 border-t border-border space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                <FilterSection icon={Globe} label="País">
+                <div className="flex flex-col gap-1">
                   {COUNTRY_OPTIONS.map(o => (
-                    <Chip key={o.v} active={country === o.v} onClick={() => { setCountry(o.v); setState("ALL"); }}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={country === o.v} onClick={() => { setCountry(o.v); setState("ALL"); }}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={GraduationCap} label="Tipo de instituição">
+              <FilterDropdown
+                icon={GraduationCap}
+                label="Tipo"
+                value={type === "ALL" ? null : TYPE_OPTIONS.find(o => o.v === type)?.l ?? null}
+                onClear={() => setType("ALL")}
+              >
+                <div className="flex flex-col gap-1">
                   {TYPE_OPTIONS.map(o => (
-                    <Chip key={o.v} active={type === o.v} onClick={() => setType(o.v)}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={type === o.v} onClick={() => setType(o.v)}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={Trophy} label="Divisão esportiva">
+              <FilterDropdown
+                icon={Trophy}
+                label="Divisão"
+                value={division === "ALL" ? null : DIVISION_OPTIONS.find(o => o.v === division)?.l ?? null}
+                onClear={() => setDivision("ALL")}
+              >
+                <div className="grid grid-cols-2 gap-1">
                   {DIVISION_OPTIONS.map(o => (
-                    <Chip key={o.v} active={division === o.v} onClick={() => setDivision(o.v)}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={division === o.v} onClick={() => setDivision(o.v)}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={MapIcon} label={country === "CANADA" ? "Província" : country === "USA" ? "Estado" : "Estado / Província"}>
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-                    <Chip active={state === "ALL"} onClick={() => setState("ALL")}>Todos</Chip>
+              <FilterDropdown
+                icon={MapIcon}
+                label={country === "CANADA" ? "Província" : "Estado"}
+                value={state === "ALL" ? null : state}
+                onClear={() => setState("ALL")}
+              >
+                <div className="space-y-2">
+                  <OptionRow active={state === "ALL"} onClick={() => setState("ALL")}>Todos</OptionRow>
+                  <div className="grid grid-cols-4 gap-1 max-h-56 overflow-y-auto pr-1">
                     {states.map(s => (
-                      <Chip key={s} active={state === s} onClick={() => setState(s)}>{s}</Chip>
+                      <OptionRow key={s} active={state === s} onClick={() => setState(s)}>{s}</OptionRow>
                     ))}
                   </div>
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={DollarSign} label="Bolsas">
-                  <Chip active={!scholarshipOnly} onClick={() => setScholarshipOnly(false)}>Todas</Chip>
-                  <Chip active={scholarshipOnly} onClick={() => setScholarshipOnly(true)}>Apenas com bolsa</Chip>
-                </FilterSection>
-              </div>
-            )}
+              <FilterDropdown
+                icon={DollarSign}
+                label="Bolsas"
+                value={scholarshipOnly ? "Com bolsa" : null}
+                onClear={() => setScholarshipOnly(false)}
+              >
+                <div className="flex flex-col gap-1">
+                  <OptionRow active={!scholarshipOnly} onClick={() => setScholarshipOnly(false)}>Todas</OptionRow>
+                  <OptionRow active={scholarshipOnly} onClick={() => setScholarshipOnly(true)}>Apenas com bolsa</OptionRow>
+                </div>
+              </FilterDropdown>
+
+              {activeFilterCount > 0 && (
+                <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline px-2">
+                  limpar tudo
+                </button>
+              )}
+            </div>
           </Card>
 
           <div className="text-sm text-muted-foreground flex items-center justify-between">
@@ -589,6 +606,31 @@ function UniMap({
     return arr;
   }, [ptsAll, mapFilter, favIds, pipeIds, zoomState]);
 
+  // Pontos "regulares" (não fav, não pipeline) — candidatos a clustering
+  const regularPts = useMemo(() => pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)), [pts, favIds, pipeIds]);
+
+  // Clustering por grid quando zoom geral (ALL). Em zoom de estado, mostra individual.
+  const clustering = zoomState === "ALL";
+  const GRID = 1.6; // graus
+  const clusters = useMemo(() => {
+    if (!clustering) return [] as Array<{ key: string; lng: number; lat: number; items: Uni[] }>;
+    const map = new Map<string, { lng: number; lat: number; items: Uni[] }>();
+    for (const u of regularPts) {
+      const lat = Number(u.latitude); const lng = Number(u.longitude);
+      const gx = Math.round(lng / GRID); const gy = Math.round(lat / GRID);
+      const k = `${gx}:${gy}`;
+      const cur = map.get(k);
+      if (cur) { cur.items.push(u); cur.lng += lng; cur.lat += lat; }
+      else map.set(k, { lng, lat, items: [u] });
+    }
+    return Array.from(map.entries()).map(([key, v]) => ({
+      key,
+      lng: v.lng / v.items.length,
+      lat: v.lat / v.items.length,
+      items: v.items,
+    }));
+  }, [regularPts, clustering]);
+
   const total = ptsAll.length;
   const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
   const pipeCount = ptsAll.filter(u => pipeIds.has(u.id)).length;
@@ -699,19 +741,69 @@ function UniMap({
               }
             </Maps.Geographies>
 
-            {/* Plain dots first */}
-            {pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)).map(u => (
-              <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
-                <circle
-                  r={1.8}
-                  className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity`}
-                  onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected(u)}
-                />
-              </Maps.Marker>
-            ))}
+            {/* Plain dots — clustered when zoomed out */}
+            {clustering ? (
+              clusters.map(c => {
+                const n = c.items.length;
+                if (n === 1) {
+                  const u = c.items[0];
+                  return (
+                    <Maps.Marker key={c.key} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                      <circle
+                        r={2.2}
+                        className={`${colorOf(u)} cursor-pointer hover:opacity-100`}
+                        onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                        onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                        onMouseLeave={() => setHovered(null)}
+                        onClick={() => setSelected(u)}
+                      />
+                    </Maps.Marker>
+                  );
+                }
+                const r = Math.min(11, 3 + Math.log2(n) * 1.6);
+                const hasHigh = c.items.some(u => u.acceptance_chance === "high");
+                const fillCls = hasHigh ? "fill-success" : "fill-muted-foreground/70";
+                return (
+                  <Maps.Marker key={c.key} coordinates={[c.lng, c.lat]}>
+                    <circle r={r + 2} className={`${fillCls} opacity-20`} />
+                    <circle
+                      r={r}
+                      className={`${fillCls} cursor-pointer stroke-background`}
+                      strokeWidth={0.6}
+                      onClick={() => {
+                        // zoom para o estado dominante do cluster
+                        const counts: Record<string, number> = {};
+                        for (const it of c.items) counts[it.state] = (counts[it.state] ?? 0) + 1;
+                        const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+                        if (top && STATE_CENTERS[top]) setZoomState(top);
+                      }}
+                    />
+                    <text
+                      textAnchor="middle"
+                      y={r * 0.35}
+                      className="fill-background pointer-events-none select-none"
+                      style={{ fontSize: Math.max(7, r * 0.85), fontWeight: 700 }}
+                    >
+                      {n}
+                    </text>
+                  </Maps.Marker>
+                );
+              })
+            ) : (
+              regularPts.map(u => (
+                <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
+                  <circle
+                    r={2.4}
+                    className={`${colorOf(u)} hover:opacity-100 cursor-pointer transition-opacity stroke-background`}
+                    strokeWidth={0.4}
+                    onMouseEnter={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                    onMouseMove={(e) => setHovered({ u, x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHovered(null)}
+                    onClick={() => setSelected(u)}
+                  />
+                </Maps.Marker>
+              ))
+            )}
             {/* Pipeline */}
             {pts.filter(u => pipeIds.has(u.id) && !favIds.has(u.id)).map(u => (
               <Maps.Marker key={u.id} coordinates={[Number(u.longitude), Number(u.latitude)]}>
