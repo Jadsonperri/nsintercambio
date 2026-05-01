@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+
+const LeafletMap = lazy(() => import("@/components/colleges/LeafletMap"));
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
