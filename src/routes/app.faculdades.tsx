@@ -181,6 +181,42 @@ function FaculdadesPage() {
     toast.success("Adicionada ao pipeline");
   };
 
+  const UniRow = ({ u }: { u: Uni }) => {
+    const isFav = favIds.has(u.id);
+    const inPipe = pipeIds.has(u.id);
+    return (
+      <div className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth">
+        <div className="col-span-4 min-w-0">
+          <div className="font-medium text-sm truncate">{u.name}</div>
+          <div className="text-[11px] text-muted-foreground truncate">{[u.city, u.state].filter(Boolean).join(", ")}</div>
+        </div>
+        <div className="col-span-2 text-xs text-muted-foreground truncate">
+          {u.division && u.division !== "NONE" ? u.division.replace("_", " ") : "—"}
+        </div>
+        <div className="col-span-2 text-xs">
+          ${u.estimated_cost_usd?.toLocaleString() ?? "—"}
+          {u.scholarship_available && <span className="ml-1.5 text-success">• bolsa</span>}
+        </div>
+        <div className="col-span-2 text-xs">
+          <span className={
+            u.acceptance_chance === "high" ? "text-success font-medium" :
+            u.acceptance_chance === "low" ? "text-destructive font-medium" : "text-warning font-medium"
+          }>
+            {u.acceptance_chance === "high" ? "Alta" : u.acceptance_chance === "low" ? "Baixa" : "Média"}
+          </span>
+        </div>
+        <div className="col-span-2 flex items-center justify-end gap-1">
+          <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
+            <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+          </button>
+          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" disabled={inPipe} onClick={() => addToPipeline(u.id)}>
+            {inPipe ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
 
   const FilterDropdown = ({ icon: Icon, label, value, onClear, children }: { icon: typeof Globe; label: string; value: string | null; onClear: () => void; children: React.ReactNode }) => {
     const active = value !== null;
