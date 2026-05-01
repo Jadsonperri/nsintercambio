@@ -286,8 +286,8 @@ function FaculdadesPage() {
 
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar universidade ou cidade..."
@@ -304,96 +304,80 @@ function FaculdadesPage() {
                   </button>
                 )}
               </div>
-              <Button
-                variant={filtersOpen ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFiltersOpen(o => !o)}
-                className="gap-2 shrink-0"
+
+              <FilterDropdown
+                icon={Globe}
+                label="País"
+                value={country === "ALL" ? null : COUNTRY_OPTIONS.find(o => o.v === country)?.l ?? null}
+                onClear={() => { setCountry("ALL"); setState("ALL"); }}
               >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Filtros</span>
-                {activeFilterCount > 0 && (
-                  <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${filtersOpen ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
-                    {activeFilterCount}
-                  </span>
-                )}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-              </Button>
-            </div>
-
-            {activeFilterCount > 0 && (
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {country !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {COUNTRY_OPTIONS.find(o => o.v === country)?.l}
-                    <button onClick={() => setCountry("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {type !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {TYPE_OPTIONS.find(o => o.v === type)?.l}
-                    <button onClick={() => setType("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {division !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {DIVISION_OPTIONS.find(o => o.v === division)?.l}
-                    <button onClick={() => setDivision("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {state !== "ALL" && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    {state}
-                    <button onClick={() => setState("ALL")} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                {scholarshipOnly && (
-                  <Badge variant="secondary" className="gap-1 pr-1">
-                    Com bolsa
-                    <button onClick={() => setScholarshipOnly(false)} className="hover:bg-background/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
-                  </Badge>
-                )}
-                <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-1">
-                  limpar tudo
-                </button>
-              </div>
-            )}
-
-            {filtersOpen && (
-              <div className="pt-3 border-t border-border space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                <FilterSection icon={Globe} label="País">
+                <div className="flex flex-col gap-1">
                   {COUNTRY_OPTIONS.map(o => (
-                    <Chip key={o.v} active={country === o.v} onClick={() => { setCountry(o.v); setState("ALL"); }}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={country === o.v} onClick={() => { setCountry(o.v); setState("ALL"); }}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={GraduationCap} label="Tipo de instituição">
+              <FilterDropdown
+                icon={GraduationCap}
+                label="Tipo"
+                value={type === "ALL" ? null : TYPE_OPTIONS.find(o => o.v === type)?.l ?? null}
+                onClear={() => setType("ALL")}
+              >
+                <div className="flex flex-col gap-1">
                   {TYPE_OPTIONS.map(o => (
-                    <Chip key={o.v} active={type === o.v} onClick={() => setType(o.v)}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={type === o.v} onClick={() => setType(o.v)}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={Trophy} label="Divisão esportiva">
+              <FilterDropdown
+                icon={Trophy}
+                label="Divisão"
+                value={division === "ALL" ? null : DIVISION_OPTIONS.find(o => o.v === division)?.l ?? null}
+                onClear={() => setDivision("ALL")}
+              >
+                <div className="grid grid-cols-2 gap-1">
                   {DIVISION_OPTIONS.map(o => (
-                    <Chip key={o.v} active={division === o.v} onClick={() => setDivision(o.v)}>{o.l}</Chip>
+                    <OptionRow key={o.v} active={division === o.v} onClick={() => setDivision(o.v)}>{o.l}</OptionRow>
                   ))}
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={MapIcon} label={country === "CANADA" ? "Província" : country === "USA" ? "Estado" : "Estado / Província"}>
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-                    <Chip active={state === "ALL"} onClick={() => setState("ALL")}>Todos</Chip>
+              <FilterDropdown
+                icon={MapIcon}
+                label={country === "CANADA" ? "Província" : "Estado"}
+                value={state === "ALL" ? null : state}
+                onClear={() => setState("ALL")}
+              >
+                <div className="space-y-2">
+                  <OptionRow active={state === "ALL"} onClick={() => setState("ALL")}>Todos</OptionRow>
+                  <div className="grid grid-cols-4 gap-1 max-h-56 overflow-y-auto pr-1">
                     {states.map(s => (
-                      <Chip key={s} active={state === s} onClick={() => setState(s)}>{s}</Chip>
+                      <OptionRow key={s} active={state === s} onClick={() => setState(s)}>{s}</OptionRow>
                     ))}
                   </div>
-                </FilterSection>
+                </div>
+              </FilterDropdown>
 
-                <FilterSection icon={DollarSign} label="Bolsas">
-                  <Chip active={!scholarshipOnly} onClick={() => setScholarshipOnly(false)}>Todas</Chip>
-                  <Chip active={scholarshipOnly} onClick={() => setScholarshipOnly(true)}>Apenas com bolsa</Chip>
-                </FilterSection>
-              </div>
-            )}
+              <FilterDropdown
+                icon={DollarSign}
+                label="Bolsas"
+                value={scholarshipOnly ? "Com bolsa" : null}
+                onClear={() => setScholarshipOnly(false)}
+              >
+                <div className="flex flex-col gap-1">
+                  <OptionRow active={!scholarshipOnly} onClick={() => setScholarshipOnly(false)}>Todas</OptionRow>
+                  <OptionRow active={scholarshipOnly} onClick={() => setScholarshipOnly(true)}>Apenas com bolsa</OptionRow>
+                </div>
+              </FilterDropdown>
+
+              {activeFilterCount > 0 && (
+                <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline px-2">
+                  limpar tudo
+                </button>
+              )}
+            </div>
           </Card>
 
           <div className="text-sm text-muted-foreground flex items-center justify-between">
