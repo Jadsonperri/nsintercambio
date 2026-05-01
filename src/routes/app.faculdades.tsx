@@ -169,13 +169,57 @@ function FaculdadesPage() {
     </button>
   );
 
-  const FilterSection = ({ icon: Icon, label, children }: { icon: typeof Globe; label: string; children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <div className="text-[11px] font-semibold text-muted-foreground tracking-wide uppercase flex items-center gap-1.5">
-        <Icon className="h-3 w-3" /> {label}
-      </div>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
+  const FilterDropdown = ({ icon: Icon, label, value, onClear, children }: { icon: typeof Globe; label: string; value: string | null; onClear: () => void; children: React.ReactNode }) => {
+    const active = value !== null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-xs font-medium transition-smooth ${
+              active
+                ? "bg-primary/10 border-primary/40 text-foreground"
+                : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span>{label}</span>
+            {active && (
+              <>
+                <span className="text-foreground">·</span>
+                <span className="text-primary font-semibold max-w-[110px] truncate">{value}</span>
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClear(); }}
+                  className="ml-0.5 -mr-1 p-0.5 rounded-full hover:bg-background/50"
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              </>
+            )}
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto min-w-[220px] p-2">
+          <div className="text-[11px] font-semibold text-muted-foreground tracking-wide uppercase px-1 pb-2">{label}</div>
+          {children}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  const OptionRow = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium transition-smooth flex items-center justify-between gap-2 ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground hover:bg-muted"
+      }`}
+    >
+      <span className="truncate">{children}</span>
+      {active && <Check className="h-3.5 w-3.5 shrink-0" />}
+    </button>
   );
 
   const UniCard = ({ u }: { u: Uni }) => {
