@@ -55,7 +55,7 @@ function FaculdadesPage() {
   const [division, setDivision] = useState<string>("ALL");
   const [state, setState] = useState<string>("ALL");
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  
   const [visibleCount, setVisibleCount] = useState(60);
   const [loading, setLoading] = useState(true);
 
