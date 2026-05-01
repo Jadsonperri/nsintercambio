@@ -606,6 +606,31 @@ function UniMap({
     return arr;
   }, [ptsAll, mapFilter, favIds, pipeIds, zoomState]);
 
+  // Pontos "regulares" (não fav, não pipeline) — candidatos a clustering
+  const regularPts = useMemo(() => pts.filter(u => !favIds.has(u.id) && !pipeIds.has(u.id)), [pts, favIds, pipeIds]);
+
+  // Clustering por grid quando zoom geral (ALL). Em zoom de estado, mostra individual.
+  const clustering = zoomState === "ALL";
+  const GRID = 1.6; // graus
+  const clusters = useMemo(() => {
+    if (!clustering) return [] as Array<{ key: string; lng: number; lat: number; items: Uni[] }>;
+    const map = new Map<string, { lng: number; lat: number; items: Uni[] }>();
+    for (const u of regularPts) {
+      const lat = Number(u.latitude); const lng = Number(u.longitude);
+      const gx = Math.round(lng / GRID); const gy = Math.round(lat / GRID);
+      const k = `${gx}:${gy}`;
+      const cur = map.get(k);
+      if (cur) { cur.items.push(u); cur.lng += lng; cur.lat += lat; }
+      else map.set(k, { lng, lat, items: [u] });
+    }
+    return Array.from(map.entries()).map(([key, v]) => ({
+      key,
+      lng: v.lng / v.items.length,
+      lat: v.lat / v.items.length,
+      items: v.items,
+    }));
+  }, [regularPts, clustering]);
+
   const total = ptsAll.length;
   const favCount = ptsAll.filter(u => favIds.has(u.id)).length;
   const pipeCount = ptsAll.filter(u => pipeIds.has(u.id)).length;
