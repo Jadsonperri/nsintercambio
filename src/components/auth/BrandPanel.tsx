@@ -3,10 +3,11 @@ import { Logo } from "@/components/Logo";
 
 export function BrandPanel() {
   return (
-    <div className="relative hidden md:flex flex-col justify-between overflow-hidden p-10 lg:p-14 text-white bg-gradient-to-br from-[oklch(0.62_0.21_295)] via-[oklch(0.55_0.21_305)] to-[oklch(0.74_0.17_50)]">
+    <div className="relative hidden md:flex flex-col justify-between overflow-hidden p-10 lg:p-14 text-white bg-mesh-dark">
       {/* animated blobs */}
-      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-white/20 blur-3xl animate-pulse" />
-      <div className="pointer-events-none absolute -bottom-20 -right-10 h-80 w-80 rounded-full bg-[oklch(0.74_0.17_50)]/40 blur-3xl animate-pulse [animation-delay:600ms]" />
+      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-[oklch(0.72_0.20_38)]/30 blur-3xl animate-pulse" />
+      <div className="pointer-events-none absolute -bottom-20 -right-10 h-80 w-80 rounded-full bg-[oklch(0.62_0.22_305)]/35 blur-3xl animate-pulse [animation-delay:600ms]" />
+      <div className="pointer-events-none absolute top-1/3 right-1/4 h-60 w-60 rounded-full bg-[oklch(0.63_0.20_255)]/25 blur-3xl" />
 
       <div className="relative z-10">
         <div className="flex items-center gap-3">
@@ -18,11 +19,14 @@ export function BrandPanel() {
           </div>
         </div>
 
-        <h1 className="mt-12 text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
-          Sua jornada para uma faculdade nos EUA ou Canadá começa aqui.
+        <h1 className="font-display mt-12 text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
+          Planeje seu intercâmbio.<br />Encontre sua universidade.<br />
+          <span className="bg-gradient-to-r from-[oklch(0.85_0.18_60)] to-[oklch(0.78_0.20_320)] bg-clip-text text-transparent">
+            Construa seu futuro.
+          </span>
         </h1>
         <p className="mt-4 text-white/80 text-sm lg:text-base max-w-md">
-          Score acadêmico-esportivo, mapa de universidades, pipeline de inscrições e IA que sugere as melhores oportunidades pra você.
+          Universidades, intercâmbio e planejamento acadêmico-esportivo — com IA que entende o seu perfil.
         </p>
 
         {/* mini dashboard preview */}
