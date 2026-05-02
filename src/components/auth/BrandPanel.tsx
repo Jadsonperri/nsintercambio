@@ -19,11 +19,14 @@ export function BrandPanel() {
           </div>
         </div>
 
-        <h1 className="mt-12 text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
-          Sua jornada para uma faculdade nos EUA ou Canadá começa aqui.
+        <h1 className="font-display mt-12 text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
+          Planeje seu intercâmbio.<br />Encontre sua universidade.<br />
+          <span className="bg-gradient-to-r from-[oklch(0.85_0.18_60)] to-[oklch(0.78_0.20_320)] bg-clip-text text-transparent">
+            Construa seu futuro.
+          </span>
         </h1>
         <p className="mt-4 text-white/80 text-sm lg:text-base max-w-md">
-          Score acadêmico-esportivo, mapa de universidades, pipeline de inscrições e IA que sugere as melhores oportunidades pra você.
+          Universidades, intercâmbio e planejamento acadêmico-esportivo — com IA que entende o seu perfil.
         </p>
 
         {/* mini dashboard preview */}

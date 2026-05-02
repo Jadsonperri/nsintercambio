@@ -345,6 +345,23 @@ function FaculdadesPage() {
 
         {/* RESULTADOS */}
         <TabsContent value="resultados" className="space-y-5 mt-0">
+          {/* AI Recommendations — TOPO, acima dos filtros */}
+          {user && unis.length > 0 && (
+            <CollegeRecommendations
+              userId={user.id}
+              profile={{ fullName: user.user_metadata?.full_name }}
+              universities={unis.slice(0, 250).map(u => ({
+                id: u.id, name: u.name, state: u.state, country: u.country,
+                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
+                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
+              }))}
+              favIds={favIds}
+              pipeIds={pipeIds}
+              onToggleFav={(id) => { void toggleFav(id); }}
+              onAddPipeline={(id) => { void addToPipeline(id); }}
+            />
+          )}
+
           {/* Mini painel lateral: resumo de favoritos + pipeline */}
           {(favoritesList.length > 0 || pipeIds.size > 0) && (
             <div className="grid sm:grid-cols-2 gap-3">
@@ -504,23 +521,6 @@ function FaculdadesPage() {
               )}
               <button onClick={clearFilters} className="text-[11px] text-muted-foreground hover:text-foreground underline ml-1">limpar tudo</button>
             </div>
-          )}
-
-          {/* AI Recommendations */}
-          {user && unis.length > 0 && (
-            <CollegeRecommendations
-              userId={user.id}
-              profile={{ fullName: user.user_metadata?.full_name }}
-              universities={unis.slice(0, 250).map(u => ({
-                id: u.id, name: u.name, state: u.state, country: u.country,
-                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
-                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
-              }))}
-              favIds={favIds}
-              pipeIds={pipeIds}
-              onToggleFav={(id) => { void toggleFav(id); }}
-              onAddPipeline={(id) => { void addToPipeline(id); }}
-            />
           )}
 
           <div className="text-sm text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
