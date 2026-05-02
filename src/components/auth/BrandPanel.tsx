@@ -3,10 +3,11 @@ import { Logo } from "@/components/Logo";
 
 export function BrandPanel() {
   return (
-    <div className="relative hidden md:flex flex-col justify-between overflow-hidden p-10 lg:p-14 text-white bg-gradient-to-br from-[oklch(0.62_0.21_295)] via-[oklch(0.55_0.21_305)] to-[oklch(0.74_0.17_50)]">
+    <div className="relative hidden md:flex flex-col justify-between overflow-hidden p-10 lg:p-14 text-white bg-mesh-dark">
       {/* animated blobs */}
-      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-white/20 blur-3xl animate-pulse" />
-      <div className="pointer-events-none absolute -bottom-20 -right-10 h-80 w-80 rounded-full bg-[oklch(0.74_0.17_50)]/40 blur-3xl animate-pulse [animation-delay:600ms]" />
+      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-[oklch(0.72_0.20_38)]/30 blur-3xl animate-pulse" />
+      <div className="pointer-events-none absolute -bottom-20 -right-10 h-80 w-80 rounded-full bg-[oklch(0.62_0.22_305)]/35 blur-3xl animate-pulse [animation-delay:600ms]" />
+      <div className="pointer-events-none absolute top-1/3 right-1/4 h-60 w-60 rounded-full bg-[oklch(0.63_0.20_255)]/25 blur-3xl" />
 
       <div className="relative z-10">
         <div className="flex items-center gap-3">
