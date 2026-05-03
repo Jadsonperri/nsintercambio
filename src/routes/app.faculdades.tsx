@@ -61,7 +61,7 @@ function FaculdadesPage() {
   const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const [visibleCount, setVisibleCount] = useState(60);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -144,7 +144,7 @@ function FaculdadesPage() {
     return arr;
   }, [filteredRaw, sortBy]);
 
-  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
+  useEffect(() => { setVisibleCount(20); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const favoritesList = useMemo(() => unis.filter(u => favIds.has(u.id)), [unis, favIds]);
@@ -174,11 +174,17 @@ function FaculdadesPage() {
     }
   };
 
-  const addToPipeline = async (uId: string) => {
-    if (!user || pipeIds.has(uId)) return;
-    setPipeIds(prev => new Set(prev).add(uId));
-    await supabase.from("pipeline").insert({ user_id: user.id, university_id: uId, status: "interest" });
-    toast.success("Adicionada ao pipeline");
+  const togglePipeline = async (uId: string) => {
+    if (!user) return;
+    if (pipeIds.has(uId)) {
+      setPipeIds(prev => { const n = new Set(prev); n.delete(uId); return n; });
+      await supabase.from("pipeline").delete().eq("user_id", user.id).eq("university_id", uId);
+      toast.success("Removida do pipeline");
+    } else {
+      setPipeIds(prev => new Set(prev).add(uId));
+      await supabase.from("pipeline").insert({ user_id: user.id, university_id: uId, status: "interest" });
+      toast.success("Adicionada ao pipeline");
+    }
   };
 
   const UniRow = ({ u }: { u: Uni }) => {
@@ -209,7 +215,7 @@ function FaculdadesPage() {
           <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
             <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
-          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" disabled={inPipe} onClick={() => addToPipeline(u.id)}>
+          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" onClick={() => togglePipeline(u.id)}>
             {inPipe ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           </Button>
         </div>
@@ -315,10 +321,9 @@ function FaculdadesPage() {
           size="sm"
           variant={inPipe ? "secondary" : "default"}
           className="w-full mt-4"
-          disabled={inPipe}
-          onClick={() => addToPipeline(u.id)}
+          onClick={() => togglePipeline(u.id)}
         >
-          {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar ao pipeline</>}
+          {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline · clique pra remover</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar ao pipeline</>}
         </Button>
       </Card>
     );
@@ -333,6 +338,23 @@ function FaculdadesPage() {
         </p>
       </div>
 
+      {/* AI Recommendations — TOPO, acima das tabs (Resultados/Favoritos/Mapa) */}
+      {user && unis.length > 0 && (
+        <CollegeRecommendations
+          userId={user.id}
+          profile={{ fullName: user.user_metadata?.full_name }}
+          universities={unis.slice(0, 250).map(u => ({
+            id: u.id, name: u.name, state: u.state, country: u.country,
+            division: u.division, estimated_cost_usd: u.estimated_cost_usd,
+            scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
+          }))}
+          favIds={favIds}
+          pipeIds={pipeIds}
+          onToggleFav={(id) => { void toggleFav(id); }}
+          onAddPipeline={(id) => { void togglePipeline(id); }}
+        />
+      )}
+
       <Tabs defaultValue="resultados" className="space-y-5">
         <TabsList>
           <TabsTrigger value="resultados" className="gap-1.5"><List className="h-4 w-4" /> Resultados</TabsTrigger>
@@ -345,23 +367,6 @@ function FaculdadesPage() {
 
         {/* RESULTADOS */}
         <TabsContent value="resultados" className="space-y-5 mt-0">
-          {/* AI Recommendations — TOPO, acima dos filtros */}
-          {user && unis.length > 0 && (
-            <CollegeRecommendations
-              userId={user.id}
-              profile={{ fullName: user.user_metadata?.full_name }}
-              universities={unis.slice(0, 250).map(u => ({
-                id: u.id, name: u.name, state: u.state, country: u.country,
-                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
-                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
-              }))}
-              favIds={favIds}
-              pipeIds={pipeIds}
-              onToggleFav={(id) => { void toggleFav(id); }}
-              onAddPipeline={(id) => { void addToPipeline(id); }}
-            />
-          )}
-
           {/* Mini painel lateral: resumo de favoritos + pipeline */}
           {(favoritesList.length > 0 || pipeIds.size > 0) && (
             <div className="grid sm:grid-cols-2 gap-3">
@@ -589,7 +594,7 @@ function FaculdadesPage() {
 
           {visible.length < filtered.length && (
             <div className="flex justify-center pt-2">
-              <Button variant="outline" onClick={() => setVisibleCount(c => c + 60)}>
+              <Button variant="outline" onClick={() => setVisibleCount(c => c + 20)}>
                 Carregar mais ({(filtered.length - visible.length).toLocaleString()} restantes)
               </Button>
             </div>
@@ -619,7 +624,7 @@ function FaculdadesPage() {
               favIds={favIds}
               pipeIds={pipeIds}
               onToggleFav={toggleFav}
-              onAddPipeline={addToPipeline}
+              onAddPipeline={togglePipeline}
             />
           </MapErrorBoundary>
         </TabsContent>

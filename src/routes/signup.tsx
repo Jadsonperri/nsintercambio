@@ -51,21 +51,21 @@ function SignupPage() {
                 <Label>Nome completo</Label>
                 <div className="relative mt-1.5">
                   <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required className="pl-9" placeholder="João da Silva" />
+                  <Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required className="pl-9" />
                 </div>
               </div>
               <div>
                 <Label>Username</Label>
                 <div className="relative mt-1.5">
                   <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required placeholder="seu_username" className="pl-9" />
+                  <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required className="pl-9" />
                 </div>
               </div>
               <div>
                 <Label>Email</Label>
                 <div className="relative mt-1.5">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="pl-9" placeholder="você@email.com" />
+                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="pl-9" />
                 </div>
               </div>
               <div>
@@ -78,7 +78,6 @@ function SignupPage() {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
                     className="pl-9 pr-9"
-                    placeholder="mínimo 6 caracteres"
                   />
                   <button
                     type="button"
