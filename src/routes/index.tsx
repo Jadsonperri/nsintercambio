@@ -237,11 +237,6 @@ function Landing() {
               </Button>
             </div>
 
-            <div className="mt-8 flex items-center gap-5 justify-center lg:justify-start text-white/70 text-xs">
-              <div className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-[oklch(0.78_0.18_60)] text-[oklch(0.78_0.18_60)]" /> 4.9/5 estudantes</div>
-              <span className="h-1 w-1 rounded-full bg-white/40" />
-              <div>Sem cartão · Grátis para começar</div>
-            </div>
           </div>
 
           {/* Floating preview dashboard */}
@@ -591,11 +586,8 @@ function Landing() {
 
       {/* FOOTER */}
       <footer className="px-5 py-10 border-t border-border">
-        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mx-auto max-w-6xl flex items-center justify-center">
           <Logo />
-          <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} NEXT SCHOOL · Universidades · Intercâmbio · Planejamento
-          </div>
         </div>
       </footer>
     </div>
