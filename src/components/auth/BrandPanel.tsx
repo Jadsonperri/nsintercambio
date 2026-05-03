@@ -58,23 +58,8 @@ export function BrandPanel() {
         </div>
       </div>
 
-      {/* social proof */}
-      <div className="relative z-10 mt-10 space-y-2.5">
-        {[
-          "Dados criptografados — segurança ponta a ponta",
-          "Sem cobrança no cadastro",
-          "+500 atletas planejando o intercâmbio",
-        ].map((t) => (
-          <div key={t} className="flex items-center gap-2 text-sm text-white/90">
-            <CheckCircle2 className="h-4 w-4 text-white/90 shrink-0" />
-            <span>{t}</span>
-          </div>
-        ))}
-        <div className="pt-3 flex items-center gap-2 text-[11px] text-white/70">
-          <GraduationCap className="h-3.5 w-3.5" />
-          <span>Stanford · UCLA · Harvard · Toronto · McGill · UBC · +6 mil instituições</span>
-        </div>
-      </div>
+      <div className="relative z-10" />
     </div>
   );
 }
+

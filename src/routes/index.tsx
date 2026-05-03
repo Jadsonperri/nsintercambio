@@ -303,9 +303,9 @@ function Landing() {
       <section className="relative -mt-12 z-10 px-5">
         <div className="mx-auto max-w-5xl rounded-2xl bg-card/95 backdrop-blur-xl border border-border shadow-elegant p-6 md:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4">
           {[
-            { v: animUnis, suffix: "+", label: "Universidades reais", color: "text-[oklch(0.62_0.22_305)]" },
+            { v: animUnis, suffix: "+", label: "Universidades", color: "text-[oklch(0.62_0.22_305)]" },
             { v: animCountries, suffix: "+", label: "Estados e províncias", color: "text-[oklch(0.72_0.20_38)]" },
-            { v: animStudents, suffix: "+", label: "Estudantes ajudados", color: "text-[oklch(0.63_0.20_255)]" },
+            { v: animStudents, suffix: "+", label: "Bolsas mapeadas", color: "text-[oklch(0.63_0.20_255)]" },
           ].map((s, i) => (
             <div key={i} className="text-center sm:text-left">
               <div className={`font-display text-4xl md:text-5xl font-bold tracking-tight ${s.color}`}>
