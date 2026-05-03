@@ -215,7 +215,7 @@ function FaculdadesPage() {
           <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
             <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
-          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" disabled={inPipe} onClick={() => addToPipeline(u.id)}>
+          <Button size="sm" variant={inPipe ? "secondary" : "default"} className="h-7 px-2 text-[11px]" disabled={inPipe} onClick={() => togglePipeline(u.id)}>
             {inPipe ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           </Button>
         </div>
@@ -322,7 +322,7 @@ function FaculdadesPage() {
           variant={inPipe ? "secondary" : "default"}
           className="w-full mt-4"
           disabled={inPipe}
-          onClick={() => addToPipeline(u.id)}
+          onClick={() => togglePipeline(u.id)}
         >
           {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar ao pipeline</>}
         </Button>
@@ -364,7 +364,7 @@ function FaculdadesPage() {
               favIds={favIds}
               pipeIds={pipeIds}
               onToggleFav={(id) => { void toggleFav(id); }}
-              onAddPipeline={(id) => { void addToPipeline(id); }}
+              onAddPipeline={(id) => { void togglePipeline(id); }}
             />
           )}
 
@@ -625,7 +625,7 @@ function FaculdadesPage() {
               favIds={favIds}
               pipeIds={pipeIds}
               onToggleFav={toggleFav}
-              onAddPipeline={addToPipeline}
+              onAddPipeline={togglePipeline}
             />
           </MapErrorBoundary>
         </TabsContent>
