@@ -492,63 +492,26 @@ function Landing() {
         </div>
       </section>
 
-      {/* NEWS FEED */}
+      {/* HOW IT WORKS */}
       <section className="px-5 py-20 bg-muted/40 border-y border-border">
         <div className="mx-auto max-w-6xl">
-          <div className="flex items-end justify-between flex-wrap gap-3 mb-8">
-            <div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Em alta agora</h2>
-              <p className="text-muted-foreground mt-1 text-sm">Notícias, rankings e guias atualizados toda semana.</p>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Como funciona</h2>
+            <p className="text-muted-foreground mt-2">Em três passos você sai do zero a um plano completo.</p>
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {newsCards.map((n) => (
-              <article key={n.title} className="group rounded-2xl border border-border bg-card overflow-hidden transition-smooth hover:-translate-y-1 hover:shadow-elegant">
-                <div className="aspect-[16/10] bg-gradient-to-br from-muted via-card to-muted relative overflow-hidden flex items-center justify-center">
-                  <n.icon className="h-12 w-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[oklch(0.72_0.20_38)]/10 via-transparent to-[oklch(0.62_0.22_305)]/10" />
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              { step: "01", icon: Search, title: "Descubra", desc: "Explore mais de 6.000 universidades reais com filtros inteligentes e mapa interativo.", color: "from-[oklch(0.62_0.22_305)] to-[oklch(0.48_0.22_295)]" },
+              { step: "02", icon: Sparkles, title: "Receba o seu match", desc: "Nossa IA analisa o seu perfil acadêmico-esportivo e sugere as universidades certas pra você.", color: "from-[oklch(0.72_0.20_38)] to-[oklch(0.62_0.22_305)]" },
+              { step: "03", icon: ClipboardList, title: "Planeje e execute", desc: "Pipeline de inscrições, contato com técnicos, finanças e prazos — tudo organizado.", color: "from-[oklch(0.63_0.20_255)] to-[oklch(0.62_0.22_305)]" },
+            ].map((s) => (
+              <div key={s.step} className="relative rounded-2xl border border-border bg-card p-6 transition-smooth hover:-translate-y-1 hover:shadow-elegant">
+                <div className="absolute right-5 top-4 font-display text-5xl font-bold text-muted-foreground/15">{s.step}</div>
+                <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-glow`}>
+                  <s.icon className="h-5 w-5 text-white" />
                 </div>
-                <div className="p-4">
-                  <span className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${n.tagColor}`}>{n.tag}</span>
-                  <h3 className="font-display font-bold text-base mt-2 leading-tight line-clamp-3">{n.title}</h3>
-                  <div className="text-[11px] text-muted-foreground mt-2">{n.date}</div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS / STORIES */}
-      <section className="px-5 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <Users className="h-3 w-3" /> Comunidade
-            </div>
-            <h2 className="font-display mt-3 text-3xl md:text-4xl font-bold tracking-tight">
-              Histórias reais da nossa comunidade
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(stories.length > 0 ? stories : [
-              { id: "1", content: "Consegui bolsa integral em uma D1 nos EUA. O score do Next School me mostrou exatamente onde focar.", achievement_type: "scholarship", badge: "🏆", created_at: new Date().toISOString() },
-              { id: "2", content: "Em 3 meses montei meu pipeline com 12 universidades e já estou em conversa com 4 técnicos.", achievement_type: "pipeline", badge: "✈️", created_at: new Date().toISOString() },
-              { id: "3", content: "A IA sugeriu uma universidade que eu nem conhecia — e era o match perfeito pro meu perfil.", achievement_type: "discovery", badge: "✨", created_at: new Date().toISOString() },
-            ] as CommunityPost[]).map((s, i) => (
-              <div key={s.id} className="rounded-2xl border border-border bg-card p-5 transition-smooth hover:-translate-y-1 hover:shadow-elegant">
-                <div className="flex items-center gap-3">
-                  <div className={`h-11 w-11 rounded-full bg-gradient-to-br ${i === 0 ? "from-[oklch(0.72_0.20_38)] to-[oklch(0.62_0.22_305)]" : i === 1 ? "from-[oklch(0.62_0.22_305)] to-[oklch(0.63_0.20_255)]" : "from-[oklch(0.63_0.20_255)] to-[oklch(0.72_0.20_38)]"} flex items-center justify-center text-white font-bold`}>
-                    {s.badge ?? "🎓"}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm">Estudante Next School</div>
-                    <div className="text-[11px] text-muted-foreground capitalize">{s.achievement_type.replace("_", " ")}</div>
-                  </div>
-                </div>
-                <p className="mt-4 text-sm text-foreground/90 leading-relaxed line-clamp-5">"{s.content}"</p>
+                <h3 className="font-display font-bold text-xl mt-4">{s.title}</h3>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
