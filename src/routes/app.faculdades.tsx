@@ -61,7 +61,7 @@ function FaculdadesPage() {
   const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const [visibleCount, setVisibleCount] = useState(60);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -144,7 +144,7 @@ function FaculdadesPage() {
     return arr;
   }, [filteredRaw, sortBy]);
 
-  useEffect(() => { setVisibleCount(60); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
+  useEffect(() => { setVisibleCount(20); }, [search, country, type, division, state, scholarshipOnly, sortBy]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const favoritesList = useMemo(() => unis.filter(u => favIds.has(u.id)), [unis, favIds]);
@@ -174,11 +174,17 @@ function FaculdadesPage() {
     }
   };
 
-  const addToPipeline = async (uId: string) => {
-    if (!user || pipeIds.has(uId)) return;
-    setPipeIds(prev => new Set(prev).add(uId));
-    await supabase.from("pipeline").insert({ user_id: user.id, university_id: uId, status: "interest" });
-    toast.success("Adicionada ao pipeline");
+  const togglePipeline = async (uId: string) => {
+    if (!user) return;
+    if (pipeIds.has(uId)) {
+      setPipeIds(prev => { const n = new Set(prev); n.delete(uId); return n; });
+      await supabase.from("pipeline").delete().eq("user_id", user.id).eq("university_id", uId);
+      toast.success("Removida do pipeline");
+    } else {
+      setPipeIds(prev => new Set(prev).add(uId));
+      await supabase.from("pipeline").insert({ user_id: user.id, university_id: uId, status: "interest" });
+      toast.success("Adicionada ao pipeline");
+    }
   };
 
   const UniRow = ({ u }: { u: Uni }) => {
