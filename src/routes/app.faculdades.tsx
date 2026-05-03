@@ -338,6 +338,23 @@ function FaculdadesPage() {
         </p>
       </div>
 
+      {/* AI Recommendations — TOPO, acima das tabs (Resultados/Favoritos/Mapa) */}
+      {user && unis.length > 0 && (
+        <CollegeRecommendations
+          userId={user.id}
+          profile={{ fullName: user.user_metadata?.full_name }}
+          universities={unis.slice(0, 250).map(u => ({
+            id: u.id, name: u.name, state: u.state, country: u.country,
+            division: u.division, estimated_cost_usd: u.estimated_cost_usd,
+            scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
+          }))}
+          favIds={favIds}
+          pipeIds={pipeIds}
+          onToggleFav={(id) => { void toggleFav(id); }}
+          onAddPipeline={(id) => { void togglePipeline(id); }}
+        />
+      )}
+
       <Tabs defaultValue="resultados" className="space-y-5">
         <TabsList>
           <TabsTrigger value="resultados" className="gap-1.5"><List className="h-4 w-4" /> Resultados</TabsTrigger>
@@ -350,23 +367,6 @@ function FaculdadesPage() {
 
         {/* RESULTADOS */}
         <TabsContent value="resultados" className="space-y-5 mt-0">
-          {/* AI Recommendations — TOPO, acima dos filtros */}
-          {user && unis.length > 0 && (
-            <CollegeRecommendations
-              userId={user.id}
-              profile={{ fullName: user.user_metadata?.full_name }}
-              universities={unis.slice(0, 250).map(u => ({
-                id: u.id, name: u.name, state: u.state, country: u.country,
-                division: u.division, estimated_cost_usd: u.estimated_cost_usd,
-                scholarship_available: u.scholarship_available, acceptance_chance: u.acceptance_chance,
-              }))}
-              favIds={favIds}
-              pipeIds={pipeIds}
-              onToggleFav={(id) => { void toggleFav(id); }}
-              onAddPipeline={(id) => { void togglePipeline(id); }}
-            />
-          )}
-
           {/* Mini painel lateral: resumo de favoritos + pipeline */}
           {(favoritesList.length > 0 || pipeIds.size > 0) && (
             <div className="grid sm:grid-cols-2 gap-3">
