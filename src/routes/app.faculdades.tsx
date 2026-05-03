@@ -399,6 +399,36 @@ function FaculdadesPage() {
             </div>
           )}
 
+          {/* Quick insights baseados nos filtros atuais */}
+          {!loading && filtered.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              {(() => {
+                const withCost = filtered.filter(u => u.estimated_cost_usd != null);
+                const avg = withCost.length ? Math.round(withCost.reduce((s, u) => s + (u.estimated_cost_usd ?? 0), 0) / withCost.length) : 0;
+                const schol = filtered.filter(u => u.scholarship_available).length;
+                const high = filtered.filter(u => u.acceptance_chance === "high").length;
+                const lowCost = filtered.filter(u => (u.estimated_cost_usd ?? Infinity) < 30000).length;
+                const stats = [
+                  { label: "Custo médio/ano", value: avg ? `US$ ${avg.toLocaleString()}` : "—", ring: "ring-[oklch(0.62_0.22_305)]/30", bg: "from-[oklch(0.62_0.22_305)]/15 to-[oklch(0.62_0.22_305)]/5", Icon: DollarSign },
+                  { label: "Com bolsa", value: `${schol} (${Math.round(schol / filtered.length * 100)}%)`, ring: "ring-success/30", bg: "from-success/15 to-success/5", Icon: Trophy },
+                  { label: "Alta chance", value: high.toLocaleString(), ring: "ring-[oklch(0.72_0.20_38)]/30", bg: "from-[oklch(0.72_0.20_38)]/15 to-[oklch(0.72_0.20_38)]/5", Icon: Star },
+                  { label: "Custo até $30k", value: lowCost.toLocaleString(), ring: "ring-[oklch(0.63_0.20_255)]/30", bg: "from-[oklch(0.63_0.20_255)]/15 to-[oklch(0.63_0.20_255)]/5", Icon: GraduationCap },
+                ];
+                return stats.map((s, i) => (
+                  <div key={i} className={`rounded-xl bg-gradient-to-br ${s.bg} ring-1 ${s.ring} p-3 flex items-center gap-2.5`}>
+                    <div className="h-9 w-9 rounded-lg bg-card/70 backdrop-blur flex items-center justify-center shrink-0">
+                      <s.Icon className="h-4 w-4 text-foreground/80" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{s.label}</div>
+                      <div className="text-sm font-bold truncate">{s.value}</div>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
