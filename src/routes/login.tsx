@@ -63,7 +63,7 @@ function LoginPage() {
                 <Label htmlFor="id">Email ou username</Label>
                 <div className="relative mt-1.5">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input id="id" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoFocus className="pl-9" placeholder="você@email.com" />
+                  <Input id="id" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoFocus className="pl-9" />
                 </div>
               </div>
               <div>
@@ -82,7 +82,6 @@ function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="pl-9 pr-9"
-                    placeholder="••••••••"
                   />
                   <button
                     type="button"
