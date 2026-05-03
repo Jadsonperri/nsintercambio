@@ -148,8 +148,8 @@ export function CollegeRecommendations({
                         size="sm"
                         variant={inPipe ? "secondary" : "default"}
                         className="flex-1 h-7 px-1.5 text-[10px]"
-                        disabled={inPipe}
                         onClick={() => onAddPipeline(u.id)}
+                        title={inPipe ? "Clique para remover do pipeline" : "Adicionar ao pipeline"}
                       >
                         {inPipe ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                       </Button>
