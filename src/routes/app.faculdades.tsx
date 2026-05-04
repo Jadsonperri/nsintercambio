@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List, LayoutGrid, ArrowUpDown } from "lucide-react";
+import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List, LayoutGrid, ArrowUpDown, UserCircle2, ChevronRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { CollegeRecommendations } from "@/components/colleges/CollegeRecommendations";
+import { ProfileCompatibilityCard } from "@/components/colleges/ProfileCompatibilityCard";
+import { CompactFilterBar } from "@/components/colleges/CompactFilterBar";
 
 export const Route = createFileRoute("/app/faculdades")({ component: FaculdadesPage });
 
@@ -48,7 +50,7 @@ const DIVISION_OPTIONS = [
 ];
 
 function FaculdadesPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [unis, setUnis] = useState<Uni[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [pipeIds, setPipeIds] = useState<Set<string>>(new Set());
@@ -60,6 +62,8 @@ function FaculdadesPage() {
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [costRange, setCostRange] = useState<[number, number]>([0, 80000]);
+  const [minChance, setMinChance] = useState(0);
 
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
@@ -121,8 +125,14 @@ function FaculdadesPage() {
     if (division !== "ALL" && u.division !== division) return false;
     if (state !== "ALL" && u.state !== state) return false;
     if (scholarshipOnly && !u.scholarship_available) return false;
+    const cost = u.estimated_cost_usd;
+    if (cost != null && (cost < costRange[0] || cost > costRange[1])) return false;
+    if (minChance > 0) {
+      const pct = u.acceptance_chance === "high" ? 80 : u.acceptance_chance === "medium" ? 50 : u.acceptance_chance === "low" ? 20 : 0;
+      if (pct < minChance) return false;
+    }
     return true;
-  }), [unis, search, country, type, division, state, scholarshipOnly]);
+  }), [unis, search, country, type, division, state, scholarshipOnly, costRange, minChance]);
 
   const filtered = useMemo(() => {
     const arr = [...filteredRaw];
@@ -428,6 +438,39 @@ function FaculdadesPage() {
               })()}
             </div>
           )}
+
+          {/* Compatibilidade do perfil */}
+          {(() => {
+            const fields: Array<unknown> = [
+              profile?.full_name, profile?.username, profile?.email, profile?.avatar_url,
+              (profile as Record<string, unknown> | null)?.age,
+              (profile as Record<string, unknown> | null)?.english_level,
+              (profile as Record<string, unknown> | null)?.education_level,
+              (profile as Record<string, unknown> | null)?.target_country,
+              (profile as Record<string, unknown> | null)?.main_goal,
+              favIds.size > 0 ? true : null,
+            ];
+            const filled = fields.filter(Boolean).length;
+            const pct = Math.round((filled / fields.length) * 100);
+            const recs = filtered.slice(0, 3).map((u, i) => ({
+              id: u.id,
+              name: u.name,
+              country: u.country,
+              state: u.state,
+              match: 95 - i * 4,
+            }));
+            return <ProfileCompatibilityCard percent={pct} recommendations={recs} />;
+          })()}
+
+          {/* Filtros compactos: Custo / Chance / Bolsa */}
+          <CompactFilterBar
+            costRange={costRange}
+            onCostChange={setCostRange}
+            minChance={minChance}
+            onMinChanceChange={setMinChance}
+            scholarshipOnly={scholarshipOnly}
+            onScholarshipChange={setScholarshipOnly}
+          />
 
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
