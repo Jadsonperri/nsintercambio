@@ -24,6 +24,15 @@ type Uni = {
   estimated_cost_usd: number | null; scholarship_available: boolean;
   acceptance_chance: string | null;
   latitude: number | null; longitude: number | null;
+  website: string | null;
+};
+
+type PipelineRow = {
+  email_sent: boolean;
+  response_received: boolean;
+  applied: boolean;
+  interest_level: string | null;
+  notes: string | null;
 };
 
 const COUNTRY_OPTIONS = [
