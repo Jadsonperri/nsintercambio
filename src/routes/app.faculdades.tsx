@@ -232,7 +232,7 @@ function FaculdadesPage() {
             {u.acceptance_chance === "high" ? "Alta" : u.acceptance_chance === "low" ? "Baixa" : "Média"}
           </span>
         </div>
-        <div className="col-span-2 flex items-center justify-end gap-1">
+        <div className="col-span-2 flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
             <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
