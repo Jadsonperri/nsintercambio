@@ -729,6 +729,17 @@ function FaculdadesPage() {
           </MapErrorBoundary>
         </TabsContent>
       </Tabs>
+
+      <UniversityDetailDialog
+        uni={selectedUni}
+        open={!!selectedUni}
+        onOpenChange={(v) => { if (!v) setSelectedUni(null); }}
+        userId={user?.id ?? null}
+        inPipeline={selectedUni ? pipeIds.has(selectedUni.id) : false}
+        isFav={selectedUni ? favIds.has(selectedUni.id) : false}
+        onToggleFav={toggleFav}
+        onTogglePipeline={togglePipeline}
+      />
     </div>
   );
 }
