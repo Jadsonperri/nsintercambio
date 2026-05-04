@@ -439,6 +439,39 @@ function FaculdadesPage() {
             </div>
           )}
 
+          {/* Compatibilidade do perfil */}
+          {(() => {
+            const fields: Array<unknown> = [
+              profile?.full_name, profile?.username, profile?.email, profile?.avatar_url,
+              (profile as Record<string, unknown> | null)?.age,
+              (profile as Record<string, unknown> | null)?.english_level,
+              (profile as Record<string, unknown> | null)?.education_level,
+              (profile as Record<string, unknown> | null)?.target_country,
+              (profile as Record<string, unknown> | null)?.main_goal,
+              favIds.size > 0 ? true : null,
+            ];
+            const filled = fields.filter(Boolean).length;
+            const pct = Math.round((filled / fields.length) * 100);
+            const recs = filtered.slice(0, 3).map((u, i) => ({
+              id: u.id,
+              name: u.name,
+              country: u.country,
+              state: u.state,
+              match: 95 - i * 4,
+            }));
+            return <ProfileCompatibilityCard percent={pct} recommendations={recs} />;
+          })()}
+
+          {/* Filtros compactos: Custo / Chance / Bolsa */}
+          <CompactFilterBar
+            costRange={costRange}
+            onCostChange={setCostRange}
+            minChance={minChance}
+            onMinChanceChange={setMinChance}
+            scholarshipOnly={scholarshipOnly}
+            onScholarshipChange={setScholarshipOnly}
+          />
+
           {/* Search + filters */}
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
