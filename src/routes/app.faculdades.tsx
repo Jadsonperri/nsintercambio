@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CollegeRecommendations } from "@/components/colleges/CollegeRecommendations";
 import { ProfileCompatibilityCard } from "@/components/colleges/ProfileCompatibilityCard";
 import { CompactFilterBar } from "@/components/colleges/CompactFilterBar";
+import { UniversityDetailDialog } from "@/components/colleges/UniversityDetailDialog";
 
 export const Route = createFileRoute("/app/faculdades")({ component: FaculdadesPage });
 
@@ -24,6 +25,15 @@ type Uni = {
   estimated_cost_usd: number | null; scholarship_available: boolean;
   acceptance_chance: string | null;
   latitude: number | null; longitude: number | null;
+  website: string | null;
+};
+
+type PipelineRow = {
+  email_sent: boolean;
+  response_received: boolean;
+  applied: boolean;
+  interest_level: string | null;
+  notes: string | null;
 };
 
 const COUNTRY_OPTIONS = [
@@ -67,6 +77,7 @@ function FaculdadesPage() {
 
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
+  const [selectedUni, setSelectedUni] = useState<Uni | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -201,7 +212,7 @@ function FaculdadesPage() {
     const isFav = favIds.has(u.id);
     const inPipe = pipeIds.has(u.id);
     return (
-      <div className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth">
+      <div onClick={() => setSelectedUni(u)} className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth cursor-pointer">
         <div className="col-span-4 min-w-0">
           <div className="font-medium text-sm truncate">{u.name}</div>
           <div className="text-[11px] text-muted-foreground truncate">{[u.city, u.state].filter(Boolean).join(", ")}</div>
@@ -221,7 +232,7 @@ function FaculdadesPage() {
             {u.acceptance_chance === "high" ? "Alta" : u.acceptance_chance === "low" ? "Baixa" : "Média"}
           </span>
         </div>
-        <div className="col-span-2 flex items-center justify-end gap-1">
+        <div className="col-span-2 flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => toggleFav(u.id)} className="p-1.5 rounded hover:bg-muted">
             <Star className={`h-4 w-4 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
@@ -291,7 +302,10 @@ function FaculdadesPage() {
     const isFav = favIds.has(u.id);
     const inPipe = pipeIds.has(u.id);
     return (
-      <Card className="p-5 transition-smooth hover:shadow-elegant hover:-translate-y-0.5">
+      <Card
+        onClick={() => setSelectedUni(u)}
+        className="p-5 cursor-pointer transition-smooth hover:shadow-elegant hover:-translate-y-0.5 hover:border-[#A855F7]/40"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold truncate">{u.name}</h3>
@@ -299,7 +313,10 @@ function FaculdadesPage() {
               <MapPin className="h-3 w-3" /> {[u.city, u.state, u.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
             </div>
           </div>
-          <button onClick={() => toggleFav(u.id)} className="shrink-0 p-2 -m-2 transition-smooth">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleFav(u.id); }}
+            className="shrink-0 p-2 -m-2 transition-smooth"
+          >
             <Star className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
         </div>
@@ -327,14 +344,24 @@ function FaculdadesPage() {
           </span>
         </div>
 
-        <Button
-          size="sm"
-          variant={inPipe ? "secondary" : "default"}
-          className="w-full mt-4"
-          onClick={() => togglePipeline(u.id)}
-        >
-          {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline · clique pra remover</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar ao pipeline</>}
-        </Button>
+        <div className="mt-4 flex gap-2">
+          <Button
+            size="sm"
+            variant={inPipe ? "secondary" : "default"}
+            className="flex-1"
+            onClick={(e) => { e.stopPropagation(); togglePipeline(u.id); }}
+          >
+            {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Pipeline</>}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); setSelectedUni(u); }}
+          >
+            Saber mais
+            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+          </Button>
+        </div>
       </Card>
     );
   };
@@ -702,6 +729,17 @@ function FaculdadesPage() {
           </MapErrorBoundary>
         </TabsContent>
       </Tabs>
+
+      <UniversityDetailDialog
+        uni={selectedUni}
+        open={!!selectedUni}
+        onOpenChange={(v) => { if (!v) setSelectedUni(null); }}
+        userId={user?.id ?? null}
+        inPipeline={selectedUni ? pipeIds.has(selectedUni.id) : false}
+        isFav={selectedUni ? favIds.has(selectedUni.id) : false}
+        onToggleFav={toggleFav}
+        onTogglePipeline={togglePipeline}
+      />
     </div>
   );
 }
