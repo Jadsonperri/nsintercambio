@@ -125,8 +125,14 @@ function FaculdadesPage() {
     if (division !== "ALL" && u.division !== division) return false;
     if (state !== "ALL" && u.state !== state) return false;
     if (scholarshipOnly && !u.scholarship_available) return false;
+    const cost = u.estimated_cost_usd;
+    if (cost != null && (cost < costRange[0] || cost > costRange[1])) return false;
+    if (minChance > 0) {
+      const pct = u.acceptance_chance === "high" ? 80 : u.acceptance_chance === "medium" ? 50 : u.acceptance_chance === "low" ? 20 : 0;
+      if (pct < minChance) return false;
+    }
     return true;
-  }), [unis, search, country, type, division, state, scholarshipOnly]);
+  }), [unis, search, country, type, division, state, scholarshipOnly, costRange, minChance]);
 
   const filtered = useMemo(() => {
     const arr = [...filteredRaw];
