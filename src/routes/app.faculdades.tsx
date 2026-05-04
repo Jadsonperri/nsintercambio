@@ -50,7 +50,7 @@ const DIVISION_OPTIONS = [
 ];
 
 function FaculdadesPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [unis, setUnis] = useState<Uni[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [pipeIds, setPipeIds] = useState<Set<string>>(new Set());
