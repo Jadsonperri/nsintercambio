@@ -77,6 +77,7 @@ function FaculdadesPage() {
 
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
+  const [selectedUni, setSelectedUni] = useState<Uni | null>(null);
 
   const refresh = async () => {
     setLoading(true);
