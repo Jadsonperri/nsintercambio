@@ -212,7 +212,7 @@ function FaculdadesPage() {
     const isFav = favIds.has(u.id);
     const inPipe = pipeIds.has(u.id);
     return (
-      <div className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth">
+      <div onClick={() => setSelectedUni(u)} className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-muted/40 transition-smooth cursor-pointer">
         <div className="col-span-4 min-w-0">
           <div className="font-medium text-sm truncate">{u.name}</div>
           <div className="text-[11px] text-muted-foreground truncate">{[u.city, u.state].filter(Boolean).join(", ")}</div>
