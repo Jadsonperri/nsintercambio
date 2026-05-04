@@ -302,7 +302,10 @@ function FaculdadesPage() {
     const isFav = favIds.has(u.id);
     const inPipe = pipeIds.has(u.id);
     return (
-      <Card className="p-5 transition-smooth hover:shadow-elegant hover:-translate-y-0.5">
+      <Card
+        onClick={() => setSelectedUni(u)}
+        className="p-5 cursor-pointer transition-smooth hover:shadow-elegant hover:-translate-y-0.5 hover:border-[#A855F7]/40"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold truncate">{u.name}</h3>
@@ -310,7 +313,10 @@ function FaculdadesPage() {
               <MapPin className="h-3 w-3" /> {[u.city, u.state, u.country === "USA" ? "EUA" : "Canadá"].filter(Boolean).join(", ")}
             </div>
           </div>
-          <button onClick={() => toggleFav(u.id)} className="shrink-0 p-2 -m-2 transition-smooth">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleFav(u.id); }}
+            className="shrink-0 p-2 -m-2 transition-smooth"
+          >
             <Star className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : "text-muted-foreground"}`} />
           </button>
         </div>
@@ -338,14 +344,24 @@ function FaculdadesPage() {
           </span>
         </div>
 
-        <Button
-          size="sm"
-          variant={inPipe ? "secondary" : "default"}
-          className="w-full mt-4"
-          onClick={() => togglePipeline(u.id)}
-        >
-          {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline · clique pra remover</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar ao pipeline</>}
-        </Button>
+        <div className="mt-4 flex gap-2">
+          <Button
+            size="sm"
+            variant={inPipe ? "secondary" : "default"}
+            className="flex-1"
+            onClick={(e) => { e.stopPropagation(); togglePipeline(u.id); }}
+          >
+            {inPipe ? <><Check className="h-3.5 w-3.5 mr-1.5" /> No pipeline</> : <><Plus className="h-3.5 w-3.5 mr-1.5" /> Pipeline</>}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); setSelectedUni(u); }}
+          >
+            Saber mais
+            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+          </Button>
+        </div>
       </Card>
     );
   };
