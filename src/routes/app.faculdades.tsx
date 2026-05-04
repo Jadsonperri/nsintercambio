@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CollegeRecommendations } from "@/components/colleges/CollegeRecommendations";
 import { ProfileCompatibilityCard } from "@/components/colleges/ProfileCompatibilityCard";
 import { CompactFilterBar } from "@/components/colleges/CompactFilterBar";
+import { UniversityDetailDialog } from "@/components/colleges/UniversityDetailDialog";
 
 export const Route = createFileRoute("/app/faculdades")({ component: FaculdadesPage });
 
