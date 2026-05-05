@@ -150,7 +150,7 @@ function ExecucaoPage() {
     if (!row || row.status === overId) return;
     
     updateRow(row.id, { status: overId }, { from: row.status, to: overId });
-    toast.success(`Movido para ${COLUMNS.find(c => c.key === overId)?.label ?? overId} ✓`);
+    toast.success(`Movido para ${COLUMNS.find(c => c.key === overId)?.label ?? overId}`);
   };
 
   const stats = useMemo(() => {
@@ -598,7 +598,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                                   row[k] === true ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-white/5 text-white/40 hover:text-white"
                                 )}
                               >
-                                {row[k] === true && <Check className="h-3 w-3 mr-1.5" />} Sim ✓
+                                {row[k] === true && <Check className="h-3 w-3 mr-1.5" />} Sim
                               </Button>
                               <Button 
                                 size="sm" 
@@ -609,7 +609,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                                   row[k] === false ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "bg-white/5 text-white/40 hover:text-white"
                                 )}
                               >
-                                {row[k] === false && <X className="h-3 w-3 mr-1.5" />} Não ✗
+                                {row[k] === false && <X className="h-3 w-3 mr-1.5" />} Não
                               </Button>
                            </div>
                         </div>
@@ -694,7 +694,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                     }} 
                     className="bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] text-white font-black text-[10px] uppercase px-6"
                    >
-                     Mover para próxima etapa →
+                     Mover para próxima etapa
                    </Button>
                 </div>
              </div>
