@@ -215,32 +215,57 @@ function ExecucaoPage() {
         </div>
       </header>
 
-      {/* Kanban Board */}
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide min-h-[70vh]">
-          {COLUMNS.map(col => (
-            <Column 
-              key={col.key} 
-              col={col} 
-              rows={rows.filter(r => r.status === col.key)} 
-              isCollapsed={collapsedCols.has(col.key)}
-              onToggleCollapse={() => {
-                const next = new Set(collapsedCols);
-                if (next.has(col.key)) next.delete(col.key); else next.add(col.key);
-                setCollapsedCols(next);
-              }}
-              onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
-              onEmail={(r) => setEmailGenFor(r)}
-            />
-          ))}
-        </div>
-        <DragOverlay>
-          {activeId ? (() => {
-            const r = rows.find(x => x.id === activeId);
-            return r ? <KanbanCard row={r} dragging /> : null;
-          })() : null}
-        </DragOverlay>
-      </DndContext>
+      {/* CRM Tabs: Pipeline / Prazos / Documentos */}
+      <Tabs defaultValue="pipeline" className="w-full">
+        <TabsList className="bg-white/5 border border-white/10 p-1 h-auto rounded-xl">
+          <TabsTrigger value="pipeline" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <ListChecks className="h-4 w-4" /> Pipeline
+          </TabsTrigger>
+          <TabsTrigger value="prazos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <CalendarIcon className="h-4 w-4" /> Prazos
+          </TabsTrigger>
+          <TabsTrigger value="documentos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <FileText className="h-4 w-4" /> Documentos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pipeline" className="mt-6">
+          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+            <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide min-h-[70vh]">
+              {COLUMNS.map(col => (
+                <Column 
+                  key={col.key} 
+                  col={col} 
+                  rows={rows.filter(r => r.status === col.key)} 
+                  isCollapsed={collapsedCols.has(col.key)}
+                  onToggleCollapse={() => {
+                    const next = new Set(collapsedCols);
+                    if (next.has(col.key)) next.delete(col.key); else next.add(col.key);
+                    setCollapsedCols(next);
+                  }}
+                  onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
+                  onEmail={(r) => setEmailGenFor(r)}
+                />
+              ))}
+            </div>
+            <DragOverlay>
+              {activeId ? (() => {
+                const r = rows.find(x => x.id === activeId);
+                return r ? <KanbanCard row={r} dragging /> : null;
+              })() : null}
+            </DragOverlay>
+          </DndContext>
+        </TabsContent>
+
+        <TabsContent value="prazos" className="mt-6 -mx-6 md:-mx-10">
+          <PrazosPage />
+        </TabsContent>
+
+        <TabsContent value="documentos" className="mt-6 -mx-6 md:-mx-10">
+          <DocumentosPage />
+        </TabsContent>
+      </Tabs>
+
 
       {/* Expanded Dialog */}
       <EditDialog
