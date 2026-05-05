@@ -6,7 +6,16 @@ import {
   Calendar, FileText, Calculator, Bell
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-// ...
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+type NavItem = { to: string; label: string; icon: typeof Home; exact?: boolean };
+
 // Ordem fixa conforme PRD
 const NAV: readonly NavItem[] = [
   { to: "/app", label: "Início", icon: Home, exact: true },
