@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List, LayoutGrid, ArrowUpDown, UserCircle2, ChevronRight, Sparkles } from "lucide-react";
+import { Star, Plus, MapPin, DollarSign, Check, Search, SlidersHorizontal, X, ChevronDown, Globe, GraduationCap, Trophy, Map as MapIcon, List, LayoutGrid, ArrowUpDown, UserCircle2, ChevronRight, Sparkles, Mail, MessageSquare, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { CollegeRecommendations } from "@/components/colleges/CollegeRecommendations";
 import { ProfileCompatibilityCard } from "@/components/colleges/ProfileCompatibilityCard";
@@ -58,6 +58,106 @@ const DIVISION_OPTIONS = [
   { v: "NJCAA", l: "NJCAA" },
   { v: "U_SPORTS", l: "U SPORTS 🇨🇦" },
 ];
+
+function PipelineCard({ uni, userId, onClick }: { uni: Uni; userId: string | null; onClick: () => void }) {
+  const [data, setData] = useState<PipelineRow | null>(null);
+
+  useEffect(() => {
+    if (!userId || !uni.id) return;
+    supabase
+      .from("pipeline")
+      .select("email_sent, response_received, applied, interest_level, notes")
+      .eq("user_id", userId)
+      .eq("university_id", uni.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setData(data as PipelineRow);
+      });
+  }, [uni.id, userId]);
+
+  const progress = data ? (
+    (data.email_sent ? 33 : 0) + 
+    (data.response_received ? 33 : 0) + 
+    (data.applied ? 34 : 0)
+  ) : 0;
+
+  const interestColor = 
+    data?.interest_level === "high" ? "bg-emerald-500" : 
+    data?.interest_level === "low" ? "bg-rose-500" : "bg-amber-500";
+
+  return (
+    <Card 
+      onClick={onClick}
+      className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-[#A855F7]/10 transition-all duration-300 border-[#A855F7]/10 hover:border-[#A855F7]/40 bg-card/40 backdrop-blur-sm"
+    >
+      <div className="p-5 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate group-hover:text-[#A855F7] transition-colors">{uni.name}</h3>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <MapPin className="h-3 w-3" /> {uni.city}, {uni.state}
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-full bg-white/5 border border-white/10">
+            <div className={`h-1.5 w-1.5 rounded-full ${interestColor}`} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              {data?.interest_level === "high" ? "Alto" : data?.interest_level === "low" ? "Baixo" : "Médio"}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+            <span>Progresso</span>
+            <span className="text-[#A855F7]">{progress}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+            <div 
+              className="h-full bg-gradient-to-r from-[#A855F7] to-[#7C3AED] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 border-t border-b border-white/5 bg-white/[0.02]">
+        <div className="p-3 text-center border-r border-white/5">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Email</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.email_sent ? "bg-emerald-500/10" : "bg-white/5"}`}>
+              {data?.email_sent ? <Check className="h-3 w-3 text-emerald-500" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+        <div className="p-3 text-center border-r border-white/5">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Resposta</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.response_received ? "bg-blue-500/10" : "bg-white/5"}`}>
+              {data?.response_received ? <MessageSquare className="h-3 w-3 text-blue-400" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+        <div className="p-3 text-center">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Aplicado</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.applied ? "bg-amber-500/10" : "bg-white/5"}`}>
+              {data?.applied ? <FileCheck className="h-3 w-3 text-amber-500" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 bg-gradient-to-t from-black/20 to-transparent flex items-center justify-between">
+        <div className="text-[10px] text-muted-foreground italic truncate max-w-[140px]">
+          {data?.notes ? data.notes : "Sem observações..."}
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#A855F7] group-hover:translate-x-1 transition-transform">
+          GERENCIAR <ChevronRight className="h-3 w-3" />
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function FaculdadesPage() {
   const { user, profile } = useAuth();
@@ -395,6 +495,7 @@ function FaculdadesPage() {
       <Tabs defaultValue="resultados" className="space-y-5">
         <TabsList>
           <TabsTrigger value="resultados" className="gap-1.5"><List className="h-4 w-4" /> Resultados</TabsTrigger>
+          <TabsTrigger value="execucao" className="gap-1.5"><Sparkles className="h-4 w-4" /> Execução</TabsTrigger>
           <TabsTrigger value="favoritos" className="gap-1.5">
             <Star className="h-4 w-4" /> Favoritos
             {favoritesList.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-accent text-accent-foreground">{favoritesList.length}</span>}
@@ -697,6 +798,26 @@ function FaculdadesPage() {
               <Button variant="outline" onClick={() => setVisibleCount(c => c + 20)}>
                 Carregar mais ({(filtered.length - visible.length).toLocaleString()} restantes)
               </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* EXECUÇÃO / PIPELINE */}
+        <TabsContent value="execucao" className="space-y-6 mt-0">
+          {pipeIds.size === 0 ? (
+            <Card className="p-12 text-center">
+              <Sparkles className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="font-medium">Seu pipeline está vazio</p>
+              <p className="text-sm text-muted-foreground mt-1">Adicione universidades para gerenciar o contato e candidaturas.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(() => {
+                const pipeUnis = unis.filter(u => pipeIds.has(u.id));
+                return pipeUnis.map(u => (
+                  <PipelineCard key={u.id} uni={u} userId={user?.id ?? null} onClick={() => setSelectedUni(u)} />
+                ));
+              })()}
             </div>
           )}
         </TabsContent>
