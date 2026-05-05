@@ -71,12 +71,12 @@ type HistoryRow = {
 };
 
 const COLUMNS = [
-  { key: "interest", label: "Interesse", emoji: "👀", color: "border-[#F59E0B]", bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]" },
-  { key: "email_sent", label: "Email Enviado", emoji: "📧", color: "border-[#3B82F6]", bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]" },
-  { key: "response", label: "Resposta Recebida", emoji: "💬", color: "border-[#A855F7]", bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
-  { key: "applied", label: "Aplicado", emoji: "📝", color: "border-[#FF6B2B]", bg: "bg-[#FF6B2B]/10", text: "text-[#FF6B2B]" },
-  { key: "accepted", label: "Aceito", emoji: "✅", color: "border-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
-  { key: "rejected", label: "Rejeitado", emoji: "❌", color: "border-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", collapsible: true },
+  { key: "interest", label: "Interesse", color: "border-[#F59E0B]", bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]" },
+  { key: "email_sent", label: "Email Enviado", color: "border-[#3B82F6]", bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]" },
+  { key: "response", label: "Resposta Recebida", color: "border-[#A855F7]", bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
+  { key: "applied", label: "Aplicado", color: "border-[#FF6B2B]", bg: "bg-[#FF6B2B]/10", text: "text-[#FF6B2B]" },
+  { key: "accepted", label: "Aceito", color: "border-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
+  { key: "rejected", label: "Rejeitado", color: "border-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", collapsible: true },
 ];
 
 function daysSince(iso: string | null) {
