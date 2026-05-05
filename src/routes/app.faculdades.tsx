@@ -395,6 +395,7 @@ function FaculdadesPage() {
       <Tabs defaultValue="resultados" className="space-y-5">
         <TabsList>
           <TabsTrigger value="resultados" className="gap-1.5"><List className="h-4 w-4" /> Resultados</TabsTrigger>
+          <TabsTrigger value="execucao" className="gap-1.5"><Sparkles className="h-4 w-4" /> Execução</TabsTrigger>
           <TabsTrigger value="favoritos" className="gap-1.5">
             <Star className="h-4 w-4" /> Favoritos
             {favoritesList.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-accent text-accent-foreground">{favoritesList.length}</span>}
@@ -697,6 +698,100 @@ function FaculdadesPage() {
               <Button variant="outline" onClick={() => setVisibleCount(c => c + 20)}>
                 Carregar mais ({(filtered.length - visible.length).toLocaleString()} restantes)
               </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* EXECUÇÃO / PIPELINE */}
+        <TabsContent value="execucao" className="space-y-6 mt-0">
+          {pipeIds.size === 0 ? (
+            <Card className="p-12 text-center">
+              <Sparkles className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="font-medium">Seu pipeline está vazio</p>
+              <p className="text-sm text-muted-foreground mt-1">Adicione universidades para gerenciar o contato e candidaturas.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(() => {
+                const pipeUnis = unis.filter(u => pipeIds.has(u.id));
+                return pipeUnis.map(u => (
+                  <Card 
+                    key={u.id}
+                    onClick={() => setSelectedUni(u)}
+                    className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-[#A855F7]/10 transition-all duration-300 border-[#A855F7]/10 hover:border-[#A855F7]/40 bg-card/40 backdrop-blur-sm"
+                  >
+                    {/* Header: Uni Name & Interest Level */}
+                    <div className="p-5 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-lg leading-tight truncate group-hover:text-[#A855F7] transition-colors">{u.name}</h3>
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {u.city}, {u.state}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-full bg-white/5 border border-white/10">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#A855F7]" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">Interesse</span>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar Simplificada */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                          <span>Progresso</span>
+                          <span className="text-[#A855F7]">Academy</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                          <div className="h-full bg-gradient-to-r from-[#A855F7] to-[#7C3AED] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" style={{ width: '33%' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats/Status Grid */}
+                    <div className="grid grid-cols-3 border-t border-b border-white/5 bg-white/[0.02]">
+                      <div className="p-3 text-center border-r border-white/5">
+                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Email</div>
+                        <div className="flex justify-center">
+                          <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <Check className="h-3 w-3 text-emerald-500" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 text-center border-r border-white/5">
+                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Resposta</div>
+                        <div className="flex justify-center">
+                          <div className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center">
+                            <X className="h-3 w-3 text-white/20" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 text-center">
+                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Aplicado</div>
+                        <div className="flex justify-center">
+                          <div className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center">
+                            <X className="h-3 w-3 text-white/20" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer: Action */}
+                    <div className="p-4 bg-gradient-to-t from-black/20 to-transparent flex items-center justify-between">
+                      <div className="flex -space-x-1.5">
+                        <div className="h-6 w-6 rounded-full border-2 border-[#12121F] bg-[#A855F7]/20 flex items-center justify-center">
+                          <Mail className="h-3 w-3 text-[#A855F7]" />
+                        </div>
+                        <div className="h-6 w-6 rounded-full border-2 border-[#12121F] bg-blue-500/20 flex items-center justify-center">
+                          <Globe className="h-3 w-3 text-blue-400" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#A855F7] group-hover:translate-x-1 transition-transform">
+                        GERENCIAR <ChevronRight className="h-3 w-3" />
+                      </div>
+                    </div>
+                  </Card>
+                ));
+              })()}
             </div>
           )}
         </TabsContent>
