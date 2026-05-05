@@ -21,6 +21,7 @@ import { Route as AppIaRouteImport } from './routes/app.ia'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppFaculdadesRouteImport } from './routes/app.faculdades'
 import { Route as AppExecucaoRouteImport } from './routes/app.execucao'
+import { Route as AppDocumentosRouteImport } from './routes/app.documentos'
 import { Route as AppDirecaoRouteImport } from './routes/app.direcao'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppConexaoRouteImport } from './routes/app.conexao'
@@ -86,6 +87,11 @@ const AppExecucaoRoute = AppExecucaoRouteImport.update({
   path: '/execucao',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDocumentosRoute = AppDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDirecaoRoute = AppDirecaoRouteImport.update({
   id: '/direcao',
   path: '/direcao',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExecucaoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/documentos': {
+      id: '/app/documentos'
+      path: '/documentos'
+      fullPath: '/app/documentos'
+      preLoaderRoute: typeof AppDocumentosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/direcao': {
       id: '/app/direcao'
       path: '/direcao'
@@ -347,6 +366,7 @@ interface AppRouteChildren {
   AppConexaoRoute: typeof AppConexaoRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDirecaoRoute: typeof AppDirecaoRoute
+  AppDocumentosRoute: typeof AppDocumentosRoute
   AppExecucaoRoute: typeof AppExecucaoRoute
   AppFaculdadesRoute: typeof AppFaculdadesRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
@@ -361,6 +381,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppConexaoRoute: AppConexaoRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDirecaoRoute: AppDirecaoRoute,
+  AppDocumentosRoute: AppDocumentosRoute,
   AppExecucaoRoute: AppExecucaoRoute,
   AppFaculdadesRoute: AppFaculdadesRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
