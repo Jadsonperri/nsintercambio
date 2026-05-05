@@ -15,11 +15,14 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSimuladorRouteImport } from './routes/app.simulador'
+import { Route as AppPrazosRouteImport } from './routes/app.prazos'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppIaRouteImport } from './routes/app.ia'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppFaculdadesRouteImport } from './routes/app.faculdades'
 import { Route as AppExecucaoRouteImport } from './routes/app.execucao'
+import { Route as AppDocumentosRouteImport } from './routes/app.documentos'
 import { Route as AppDirecaoRouteImport } from './routes/app.direcao'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppConexaoRouteImport } from './routes/app.conexao'
@@ -55,6 +58,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSimuladorRoute = AppSimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrazosRoute = AppPrazosRouteImport.update({
+  id: '/prazos',
+  path: '/prazos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPerfilRoute = AppPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -78,6 +91,11 @@ const AppFaculdadesRoute = AppFaculdadesRouteImport.update({
 const AppExecucaoRoute = AppExecucaoRouteImport.update({
   id: '/execucao',
   path: '/execucao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentosRoute = AppDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDirecaoRoute = AppDirecaoRouteImport.update({
@@ -111,11 +129,14 @@ export interface FileRoutesByFullPath {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
+  '/app/simulador': typeof AppSimuladorRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -127,11 +148,14 @@ export interface FileRoutesByTo {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
+  '/app/simulador': typeof AppSimuladorRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -145,11 +169,14 @@ export interface FileRoutesById {
   '/app/conexao': typeof AppConexaoRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/direcao': typeof AppDirecaoRoute
+  '/app/documentos': typeof AppDocumentosRoute
   '/app/execucao': typeof AppExecucaoRoute
   '/app/faculdades': typeof AppFaculdadesRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
+  '/app/simulador': typeof AppSimuladorRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -164,11 +191,14 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
+    | '/app/simulador'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -180,11 +210,14 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
+    | '/app/simulador'
     | '/app'
   id:
     | '__root__'
@@ -197,11 +230,14 @@ export interface FileRouteTypes {
     | '/app/conexao'
     | '/app/dashboard'
     | '/app/direcao'
+    | '/app/documentos'
     | '/app/execucao'
     | '/app/faculdades'
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
+    | '/app/simulador'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -257,6 +293,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/simulador': {
+      id: '/app/simulador'
+      path: '/simulador'
+      fullPath: '/app/simulador'
+      preLoaderRoute: typeof AppSimuladorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/prazos': {
+      id: '/app/prazos'
+      path: '/prazos'
+      fullPath: '/app/prazos'
+      preLoaderRoute: typeof AppPrazosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/perfil': {
       id: '/app/perfil'
       path: '/perfil'
@@ -290,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/execucao'
       fullPath: '/app/execucao'
       preLoaderRoute: typeof AppExecucaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/documentos': {
+      id: '/app/documentos'
+      path: '/documentos'
+      fullPath: '/app/documentos'
+      preLoaderRoute: typeof AppDocumentosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/direcao': {
@@ -328,11 +385,14 @@ interface AppRouteChildren {
   AppConexaoRoute: typeof AppConexaoRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDirecaoRoute: typeof AppDirecaoRoute
+  AppDocumentosRoute: typeof AppDocumentosRoute
   AppExecucaoRoute: typeof AppExecucaoRoute
   AppFaculdadesRoute: typeof AppFaculdadesRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppIaRoute: typeof AppIaRoute
   AppPerfilRoute: typeof AppPerfilRoute
+  AppPrazosRoute: typeof AppPrazosRoute
+  AppSimuladorRoute: typeof AppSimuladorRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -341,11 +401,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppConexaoRoute: AppConexaoRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDirecaoRoute: AppDirecaoRoute,
+  AppDocumentosRoute: AppDocumentosRoute,
   AppExecucaoRoute: AppExecucaoRoute,
   AppFaculdadesRoute: AppFaculdadesRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppIaRoute: AppIaRoute,
   AppPerfilRoute: AppPerfilRoute,
+  AppPrazosRoute: AppPrazosRoute,
+  AppSimuladorRoute: AppSimuladorRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

@@ -50,7 +50,7 @@ export function CompactFilterBar({
     <div className="rounded-2xl bg-[#12121F] border border-white/5 p-5 md:p-6 grid gap-6 md:grid-cols-3 md:divide-x md:divide-white/5">
       {/* Custo */}
       <div className="md:pr-6 flex flex-col justify-between gap-3 min-h-[68px]">
-        <div className="flex items-baseline justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Custo (anual)</span>
           <span className="text-sm font-bold text-white tabular-nums">
             {fmtK(costRange[0])} – {fmtK(costRange[1])}
@@ -69,7 +69,7 @@ export function CompactFilterBar({
 
       {/* Chance */}
       <div className="md:px-6 flex flex-col justify-between gap-3 min-h-[68px]">
-        <div className="flex items-baseline justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Chance mínima</span>
           <span className="text-sm font-bold text-white tabular-nums">{minChance}%</span>
         </div>
