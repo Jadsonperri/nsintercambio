@@ -3,26 +3,21 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Home, LayoutDashboard, GraduationCap, Brain, Wallet,
   ListChecks, Mail, User as UserIcon, Globe, LogOut, Settings, Shield, ChevronUp,
+  Calendar, FileText, Calculator, Bell
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-type NavItem = { to: string; label: string; icon: typeof Home; exact?: boolean };
-
+// ...
 // Ordem fixa conforme PRD
 const NAV: readonly NavItem[] = [
   { to: "/app", label: "Início", icon: Home, exact: true },
   { to: "/app/dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/app/faculdades", label: "Faculdades", icon: GraduationCap },
-  { to: "/app/ia", label: "Estratégia & IA", icon: Brain },
-  { to: "/app/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/app/execucao", label: "Pipeline", icon: ListChecks },
+  { to: "/app/prazos", label: "Prazos", icon: Calendar },
+  { to: "/app/documentos", label: "Documentos", icon: FileText },
+  { to: "/app/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/app/simulador", label: "Simulador", icon: Calculator },
+  { to: "/app/ia", label: "Estratégia & IA", icon: Brain },
   { to: "/app/conexao", label: "Conexão", icon: Mail },
   { to: "/app/perfil", label: "Perfil", icon: UserIcon },
   { to: "/app/comunidade", label: "Comunidade", icon: Globe },
@@ -116,7 +111,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur px-4 md:px-6">
           <div className="md:hidden"><Logo size={26} /></div>
           <div className="flex-1" />
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <button className="p-2 text-muted-foreground hover:text-foreground transition-smooth relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border-2 border-background" />
+            </button>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Mobile nav */}
