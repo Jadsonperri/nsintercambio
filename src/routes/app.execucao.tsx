@@ -1,14 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -21,8 +21,16 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Clock, AlertTriangle, Flame, GripVertical, History, Mail, Sparkles } from "lucide-react";
+import { 
+  Clock, AlertTriangle, Flame, GripVertical, History, Mail, 
+  Sparkles, ChevronRight, X, MapPin, DollarSign, Trophy, 
+  Check, Archive, ExternalLink, Activity, Info
+} from "lucide-react";
 import { AIEmailGenerator } from "@/components/colleges/AIEmailGenerator";
+import confetti from "canvas-confetti";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/app/execucao")({ component: ExecucaoPage });
 
@@ -37,77 +45,60 @@ type Row = {
   last_activity_at: string | null;
   updated_at: string;
   university_id: string;
-  universities: { name: string; country: string; state: string; estimated_cost_usd: number | null; division: string | null; acceptance_chance: string | null } | null;
+  universities: { 
+    id: string;
+    name: string; 
+    country: string; 
+    state: string; 
+    city: string | null;
+    estimated_cost_usd: number | null; 
+    division: string | null; 
+    acceptance_chance: string | null;
+    website?: string | null;
+  } | null;
 };
 
-type HistoryRow = { id: string; from_status: string | null; to_status: string; created_at: string; note: string | null };
+type HistoryRow = { 
+  id: string; 
+  from_status: string | null; 
+  to_status: string; 
+  created_at: string; 
+  note: string | null 
+};
 
 const COLUMNS = [
-  { key: "interest", label: "Interesse", emoji: "🟡", color: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900" },
-  { key: "email_sent", label: "Email enviado", emoji: "📬", color: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900" },
-  { key: "response", label: "Resposta", emoji: "💬", color: "bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-900" },
-  { key: "applied", label: "Aplicado", emoji: "📝", color: "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900" },
-  { key: "accepted", label: "Aceito", emoji: "🟢", color: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900" },
+  { key: "interest", label: "Interesse", emoji: "👀", color: "border-[#F59E0B]", bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]" },
+  { key: "email_sent", label: "Email Enviado", emoji: "📧", color: "border-[#3B82F6]", bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]" },
+  { key: "response", label: "Resposta Recebida", emoji: "💬", color: "border-[#A855F7]", bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
+  { key: "applied", label: "Aplicado", emoji: "📝", color: "border-[#FF6B2B]", bg: "bg-[#FF6B2B]/10", text: "text-[#FF6B2B]" },
+  { key: "accepted", label: "Aceito", emoji: "✅", color: "border-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
+  { key: "rejected", label: "Rejeitado", emoji: "❌", color: "border-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", collapsible: true },
 ];
-
-// Travas: define o que é necessário para entrar em cada status
-const STATUS_GUARDS: Record<string, (r: Row) => string | null> = {
-  interest: () => null,
-  email_sent: (r) => (r.email_sent ? null : "Marque o card como 'Email enviado' antes."),
-  response: (r) => (r.email_sent ? null : "Não pode receber resposta sem ter enviado email."),
-  applied: (r) => (r.email_sent ? null : "Não pode aplicar sem ter enviado email."),
-  accepted: (r) => (r.applied ? null : "Não pode aceitar sem ter aplicado."),
-  rejected: () => null,
-};
 
 function daysSince(iso: string | null) {
   if (!iso) return 0;
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function inactivityBadge(days: number) {
-  if (days <= 3) return { label: "Ativo", cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" };
-  if (days <= 7) return { label: `${days}d parado`, cls: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" };
-  return { label: `${days}d risco`, cls: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" };
-}
-
-function priorityFor(r: Row): { label: string; icon: string; cls: string } {
-  // Heurística simples: alta chance + custo razoável + sem atividade recente = alta prioridade
-  const chance = r.universities?.acceptance_chance ?? "";
-  const days = daysSince(r.last_activity_at);
-  if (chance.toLowerCase().includes("alta") && days > 5) return { label: "Alta", icon: "🔥", cls: "text-orange-600" };
-  if (chance.toLowerCase().includes("média") || chance.toLowerCase().includes("media")) return { label: "Média", icon: "🟡", cls: "text-amber-600" };
-  return { label: "Baixa", icon: "🔵", cls: "text-muted-foreground" };
-}
-
-function nextAction(r: Row): string {
-  if (!r.email_sent) return "📬 Enviar email de apresentação";
-  if (!r.response_received) return "⏳ Aguardar resposta / fazer follow-up";
-  if (!r.applied) return "📝 Iniciar aplicação";
-  return "🎯 Aguardar decisão final";
-}
-
 function ExecucaoPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
-  const [archived, setArchived] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [showWidget, setShowWidget] = useState(false);
   const [emailGenFor, setEmailGenFor] = useState<Row | null>(null);
+  const [collapsedCols, setCollapsedCols] = useState<Set<string>>(new Set(["rejected"]));
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const load = async () => {
     if (!user) return;
     const { data } = await supabase
       .from("pipeline")
-      .select("id, status, notes, email_sent, response_received, applied, interest_level, last_activity_at, updated_at, university_id, universities(name, country, state, estimated_cost_usd, division, acceptance_chance)")
+      .select("id, status, notes, email_sent, response_received, applied, interest_level, last_activity_at, updated_at, university_id, universities(id, name, country, state, city, estimated_cost_usd, division, acceptance_chance, website)")
       .eq("user_id", user.id);
-    const all = (data as unknown as Row[]) ?? [];
-    setRows(all.filter(r => r.status !== "rejected"));
-    setArchived(all.filter(r => r.status === "rejected"));
+    setRows((data as unknown as Row[]) ?? []);
     setLoading(false);
   };
 
@@ -127,11 +118,17 @@ function ExecucaoPage() {
     void _u;
     const { error } = await supabase.from("pipeline").update({ ...rest, last_activity_at: new Date().toISOString() }).eq("id", id);
     if (error) { toast.error(error.message); return; }
+    
     if (statusChange && user) {
       await supabase.from("pipeline_history").insert({
         pipeline_id: id, user_id: user.id, from_status: statusChange.from, to_status: statusChange.to,
       });
+      
+      if (statusChange.to === "accepted") {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ["#10B981", "#A855F7", "#FF6B2B"] });
+      }
     }
+    
     await load();
     if (editing?.id === id) {
       const next = { ...editing, ...patch } as Row;
@@ -140,135 +137,142 @@ function ExecucaoPage() {
     }
   };
 
-  const moveTo = async (row: Row, toStatus: string) => {
-    if (row.status === toStatus) return;
-    const guard = STATUS_GUARDS[toStatus];
-    const blocked = guard?.(row);
-    if (blocked) { toast.error(blocked); return; }
-
-    const patch: Partial<Row> = { status: toStatus };
-    // Auto-marca os checkboxes ao avançar
-    if (toStatus === "email_sent") patch.email_sent = true;
-    if (toStatus === "response") { patch.email_sent = true; patch.response_received = true; }
-    if (toStatus === "applied") { patch.email_sent = true; patch.applied = true; }
-    if (toStatus === "accepted") { patch.email_sent = true; patch.applied = true; }
-
-    await updateRow(row.id, patch, { from: row.status, to: toStatus });
-    toast.success(`Movido para ${COLUMNS.find(c => c.key === toStatus)?.label ?? toStatus}`);
-  };
-
-  const archive = async (row: Row) => {
-    await updateRow(row.id, { status: "rejected" }, { from: row.status, to: "rejected" });
-    toast.success("Card arquivado");
-  };
-
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
   const onDragEnd = (e: DragEndEvent) => {
     setActiveId(null);
     const overId = e.over?.id ? String(e.over.id) : null;
     if (!overId) return;
     const row = rows.find(r => r.id === e.active.id);
-    if (!row) return;
-    moveTo(row, overId);
+    if (!row || row.status === overId) return;
+    
+    updateRow(row.id, { status: overId }, { from: row.status, to: overId });
+    toast.success(`Movido para ${COLUMNS.find(c => c.key === overId)?.label ?? overId} ✓`);
   };
 
-  const widget = useMemo(() => {
-    const stale = [...rows].sort((a, b) => daysSince(b.last_activity_at) - daysSince(a.last_activity_at)).slice(0, 3);
-    const promising = [...rows]
-      .filter(r => (r.universities?.acceptance_chance ?? "").toLowerCase().includes("alta"))
-      .slice(0, 3);
-    return { stale, promising };
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const inProgress = rows.filter(r => r.status !== "interest" && r.status !== "rejected" && r.status !== "accepted").length;
+    const accepted = rows.filter(r => r.status === "accepted").length;
+    
+    // Overall progress: sum of status indices / (total * max index)
+    const statusOrder = COLUMNS.map(c => c.key);
+    const progressSum = rows.reduce((acc, r) => acc + Math.max(0, statusOrder.indexOf(r.status)), 0);
+    const maxPossible = total * (statusOrder.length - 2); // excluding rejected and interest as start/end
+    const overallProgress = total > 0 ? Math.min(100, Math.round((progressSum / maxPossible) * 100)) : 0;
+    
+    return { total, inProgress, accepted, overallProgress };
   }, [rows]);
 
-  if (loading) return <div className="p-8 text-muted-foreground">Carregando pipeline...</div>;
+  if (loading) return <div className="p-8 text-muted-foreground animate-pulse">Carregando pipeline...</div>;
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold">Pipeline</h1>
-          <p className="text-muted-foreground mt-1">Arraste os cards entre colunas. Travas inteligentes evitam inconsistências.</p>
-        </div>
-        <Button variant="outline" onClick={() => setShowWidget(s => !s)}>
-          {showWidget ? "Ocultar" : "Ver"} ranking
-        </Button>
-      </div>
-
-      {showWidget && (
-        <Card className="p-4 grid md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Flame className="h-4 w-4 text-orange-500" /> Mais promissoras</h3>
-            {widget.promising.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhuma com alta chance ainda.</p>
-            ) : widget.promising.map(r => (
-              <div key={r.id} className="text-sm py-1">{r.universities?.name}</div>
-            ))}
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Mais paradas</h3>
-            {widget.stale.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Pipeline em dia.</p>
-            ) : widget.stale.map(r => (
-              <div key={r.id} className="text-sm py-1 flex justify-between">
-                <span>{r.universities?.name}</span>
-                <span className="text-muted-foreground text-xs">{daysSince(r.last_activity_at)}d</span>
+    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-10">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black font-display tracking-tight">Pipeline</h1>
+          <p className="text-muted-foreground text-lg max-w-xl">
+            Acompanhe sua jornada de candidatura em cada universidade
+          </p>
+          <div className="flex items-center gap-6 pt-4">
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Progresso Geral</div>
+              <div className="flex items-center gap-3">
+                <Progress value={stats.overallProgress} className="w-32 h-2 bg-white/5">
+                  <div className="h-full bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] rounded-full" style={{ width: `${stats.overallProgress}%` }} />
+                </Progress>
+                <span className="text-sm font-bold text-primary-glow">{stats.overallProgress}%</span>
               </div>
-            ))}
+            </div>
+            <div className="h-8 w-px bg-white/10 hidden sm:block" />
+            <div className="hidden sm:flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-xl font-black">{stats.total}</div>
+                <div className="text-[9px] font-bold uppercase text-muted-foreground">Total</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-black text-[#A855F7]">{stats.inProgress}</div>
+                <div className="text-[9px] font-bold uppercase text-muted-foreground">Em andamento</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-black text-[#10B981]">{stats.accepted}</div>
+                <div className="text-[9px] font-bold uppercase text-muted-foreground">Aceitas</div>
+              </div>
+            </div>
           </div>
-        </Card>
-      )}
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="border-[#A855F7]/40 text-[#A855F7] hover:bg-[#A855F7]/10">
+            Ver Ranking
+          </Button>
+          <Button className="bg-gradient-primary text-white font-bold" asChild>
+            <Link to="/app/faculdades">+ Adicionar Universidade</Link>
+          </Button>
+        </div>
+      </header>
 
-      {rows.length === 0 ? (
-        <Card className="p-8 text-center border-dashed">
-          <Badge className="mb-3">Nenhum item</Badge>
-          <p className="text-muted-foreground text-sm">Adicione faculdades ao pipeline em <strong>Faculdades</strong>.</p>
-        </Card>
-      ) : (
-        <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {COLUMNS.map(col => (
-              <Column 
-                key={col.key} 
-                col={col} 
-                rows={rows.filter(r => r.status === col.key)} 
-                onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
-                onEmail={(r) => setEmailGenFor(r)}
-              />
-            ))}
-          </div>
-          <DragOverlay>
-            {activeId ? (() => {
-              const r = rows.find(x => x.id === activeId);
-              return r ? <KanbanCard row={r} dragging /> : null;
-            })() : null}
-          </DragOverlay>
-        </DndContext>
-      )}
+      {/* Kanban Board */}
+      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide min-h-[70vh]">
+          {COLUMNS.map(col => (
+            <Column 
+              key={col.key} 
+              col={col} 
+              rows={rows.filter(r => r.status === col.key)} 
+              isCollapsed={collapsedCols.has(col.key)}
+              onToggleCollapse={() => {
+                const next = new Set(collapsedCols);
+                if (next.has(col.key)) next.delete(col.key); else next.add(col.key);
+                setCollapsedCols(next);
+              }}
+              onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
+              onEmail={(r) => setEmailGenFor(r)}
+            />
+          ))}
+        </div>
+        <DragOverlay>
+          {activeId ? (() => {
+            const r = rows.find(x => x.id === activeId);
+            return r ? <KanbanCard row={r} dragging /> : null;
+          })() : null}
+        </DragOverlay>
+      </DndContext>
 
-      {archived.length > 0 && (
-        <details className="mt-6">
-          <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-            Arquivo — Rejeitados ({archived.length})
-          </summary>
-          <div className="grid md:grid-cols-3 gap-3 mt-3">
-            {archived.map(r => (
-              <Card key={r.id} className="p-3 opacity-70">
-                <div className="font-medium text-sm">{r.universities?.name}</div>
-                <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs" onClick={() => moveTo(r, "interest")}>
-                  Reativar
-                </Button>
-              </Card>
-            ))}
-          </div>
-        </details>
-      )}
-
+      {/* Expanded Dialog */}
       <EditDialog
         row={editing}
         history={history}
         onClose={() => setEditing(null)}
-        onChange={(patch) => editing && updateRow(editing.id, patch)}
-        onArchive={() => { if (editing) { archive(editing); setEditing(null); } }}
+        onChange={(patch) => {
+          if (!editing) return;
+          const statusOrder = COLUMNS.map(c => c.key);
+          const currentIdx = statusOrder.indexOf(editing.status);
+          
+          // Heuristic to suggest moving to next column
+          let suggestedStatus = "";
+          if (patch.email_sent && editing.status === "interest") suggestedStatus = "email_sent";
+          else if (patch.response_received && editing.status === "email_sent") suggestedStatus = "response";
+          else if (patch.applied && editing.status === "response") suggestedStatus = "applied";
+          
+          updateRow(editing.id, patch);
+
+          if (suggestedStatus) {
+            const colLabel = COLUMNS.find(c => c.key === suggestedStatus)?.label;
+            toast(`Deseja mover para '${colLabel}'?`, {
+              action: {
+                label: "Mover agora",
+                onClick: () => updateRow(editing.id, { status: suggestedStatus }, { from: editing.status, to: suggestedStatus })
+              }
+            });
+          }
+        }}
+        onMove={(toStatus) => editing && updateRow(editing.id, { status: toStatus }, { from: editing.status, to: toStatus })}
+        onArchive={() => { 
+          if (editing) { 
+            updateRow(editing.id, { status: "rejected" }, { from: editing.status, to: "rejected" }); 
+            setEditing(null); 
+          } 
+        }}
         onGenerateEmail={() => { setEmailGenFor(editing); setEditing(null); }}
       />
 
@@ -284,187 +288,431 @@ function ExecucaoPage() {
   );
 }
 
-function Column({ col, rows, onOpen, onEmail }: { col: typeof COLUMNS[number]; rows: Row[]; onOpen: (r: Row) => void; onEmail: (r: Row) => void }) {
+function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: { 
+  col: typeof COLUMNS[number]; 
+  rows: Row[]; 
+  isCollapsed?: boolean;
+  onToggleCollapse: () => void;
+  onOpen: (r: Row) => void; 
+  onEmail: (r: Row) => void 
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: col.key });
+  
+  if (isCollapsed && col.collapsible) {
+    return (
+      <div 
+        onClick={onToggleCollapse}
+        className="w-12 h-[600px] flex flex-col items-center py-6 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
+      >
+        <span className="text-lg mb-4">{col.emoji}</span>
+        <div className="vertical-text font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+          {col.label} ({rows.length})
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl border-2 p-3 min-h-[300px] transition-colors ${col.color} ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={cn(
+        "flex-shrink-0 w-[300px] flex flex-col gap-4 rounded-2xl border-t-4 bg-white/5 border-x border-b border-white/5 p-4 transition-all duration-300",
+        col.color.replace("border-", "border-t-"),
+        isOver ? "bg-white/[0.08] ring-2 ring-primary/20 scale-[1.01]" : ""
+      )}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-semibold flex items-center gap-1.5">
-          <span>{col.emoji}</span>{col.label}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{col.emoji}</span>
+          <h2 className="font-black text-sm uppercase tracking-tight">{col.label}</h2>
+          <Badge variant="secondary" className="bg-white/10 text-white text-[10px] px-1.5 py-0 h-4 border-0">
+            {rows.length}
+          </Badge>
         </div>
-        <Badge variant="secondary" className="text-xs">{rows.length}</Badge>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-white">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+          {col.collapsible && (
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={onToggleCollapse}>
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="space-y-2">
-        {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} onEmail={() => onEmail(r)} />)}
-        {rows.length === 0 && <p className="text-xs text-muted-foreground italic px-1">Vazio</p>}
+
+      <div className="flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
+        {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} onEmail={() => onEmail(r)} colColor={col.color} />)}
+        {rows.length === 0 && (
+          <div className="h-32 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center p-4">
+            <Info className="h-5 w-5 text-white/10 mb-2" />
+            <p className="text-[10px] text-white/30 font-medium">Arraste um card para esta etapa</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function DraggableCard({ row, onOpen, onEmail }: { row: Row; onOpen: () => void; onEmail: () => void }) {
+function DraggableCard({ row, onOpen, onEmail, colColor }: { row: Row; onOpen: () => void; onEmail: () => void; colColor: string }) {
   const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({ id: row.id });
-  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.4 : 1 } : { opacity: isDragging ? 0.4 : 1 };
+  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: isDragging ? 50 : 1 } : undefined;
+  
   return (
     <div ref={setNodeRef} style={style}>
-      <KanbanCard row={row} onOpen={onOpen} onEmail={onEmail} dragHandle={{ ...attributes, ...listeners }} />
+      <KanbanCard 
+        row={row} 
+        onOpen={onOpen} 
+        onEmail={onEmail} 
+        dragHandle={{ ...attributes, ...listeners }} 
+        dragging={isDragging}
+        colColor={colColor}
+      />
     </div>
   );
 }
 
-function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging }: { row: Row; onOpen?: () => void; onEmail?: () => void; dragHandle?: Record<string, unknown>; dragging?: boolean }) {
+function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: { 
+  row: Row; 
+  onOpen?: () => void; 
+  onEmail?: () => void; 
+  dragHandle?: Record<string, unknown>; 
+  dragging?: boolean;
+  colColor?: string;
+}) {
   const days = daysSince(row.last_activity_at);
-  const inact = inactivityBadge(days);
-  const prio = priorityFor(row);
+  const isActive = days <= 7;
+  
+  const checklistSteps = [row.email_sent, row.response_received, row.applied].filter(Boolean).length;
+  const progress = Math.round((checklistSteps / 3) * 100);
+
   return (
-    <Card className={`p-3 bg-background ${dragging ? "shadow-2xl rotate-2" : "hover:shadow-md"} transition-all cursor-pointer`} onClick={onOpen}>
-      <div className="flex items-start gap-2">
-        <button {...dragHandle} className="mt-0.5 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-sm truncate">{row.universities?.name ?? "—"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {row.universities?.state}, {row.universities?.country === "USA" ? "EUA" : "Canadá"}
-            {row.universities?.division && <> · {row.universities.division}</>}
+    <Card 
+      onClick={onOpen}
+      className={cn(
+        "group relative p-4 bg-[#1A1A2E] border-white/5 transition-all duration-300 cursor-pointer overflow-hidden",
+        dragging ? "shadow-2xl opacity-60 scale-105 rotate-2" : "hover:-translate-y-1 hover:border-white/20",
+        !dragging && colColor && `hover:shadow-[0_8px_30px_rgba(0,0,0,0.4),0_0_15px_${colColor.replace("border-[", "").replace("]", "")}20]`
+      )}
+    >
+      {/* Accent Line */}
+      <div className={cn("absolute top-0 left-0 w-full h-1", colColor?.replace("border-", "bg-"))} />
+      
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0 pr-4">
+            <h3 className="font-black text-sm text-white truncate leading-tight group-hover:text-primary-glow transition-colors">
+              {row.universities?.name}
+            </h3>
+            <p className="text-[10px] text-white/50 mt-0.5 truncate flex items-center gap-1">
+              <MapPin className="h-2.5 w-2.5" />
+              {row.universities?.state} · {row.universities?.country === "USA" ? "EUA" : "Canadá"} · {row.universities?.division?.replace("_", " ") || "D1"}
+            </p>
           </div>
-          {row.universities?.estimated_cost_usd && (
-            <div className="text-xs text-muted-foreground mt-0.5">~ ${row.universities.estimated_cost_usd.toLocaleString()}/ano</div>
-          )}
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${inact.cls} flex items-center gap-1`}>
-              <Clock className="h-2.5 w-2.5" />{inact.label}
-            </span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full bg-muted ${prio.cls}`}>
-              {prio.icon} {prio.label}
-            </span>
+          <button 
+            {...dragHandle} 
+            className="text-white/20 hover:text-white transition-colors cursor-grab active:cursor-grabbing p-1 -mr-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <div className="text-[11px] font-bold text-emerald-400">
+               ~${row.universities?.estimated_cost_usd?.toLocaleString()}/ano
+             </div>
           </div>
-          <div className="mt-2 text-[11px] text-muted-foreground italic line-clamp-1 flex items-center justify-between">
-            <span>→ {nextAction(row)}</span>
-            {onEmail && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onEmail(); }}
-                className="text-primary hover:text-primary-glow flex items-center gap-0.5 ml-2"
-              >
-                <Mail className="h-3 w-3" />
-                <span className="text-[10px]">Email</span>
-              </button>
-            )}
+          <div className="flex items-center gap-1.5">
+             <span className={cn(
+               "h-1.5 w-1.5 rounded-full",
+               isActive ? "bg-emerald-500 animate-pulse" : "bg-white/10"
+             )} />
+             <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">
+               {isActive ? "Ativo" : "Inativo"}
+             </span>
           </div>
         </div>
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+           <div className="flex-1 space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase text-white/40">
+                <span>Checklist</span>
+                <span>{checklistSteps}/3</span>
+              </div>
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] rounded-full transition-all duration-500" 
+                  style={{ width: `${progress}%` }} 
+                />
+              </div>
+           </div>
+           <div className={cn(
+             "px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1",
+             row.interest_level === "high" ? "bg-emerald-500/10 text-emerald-500" :
+             row.interest_level === "low" ? "bg-rose-500/10 text-rose-500" :
+             "bg-amber-500/10 text-amber-500"
+           )}>
+             <span className={cn(
+               "h-1 w-1 rounded-full",
+               row.interest_level === "high" ? "bg-emerald-500" :
+               row.interest_level === "low" ? "bg-rose-500" :
+               "bg-amber-500"
+             )} />
+             {row.interest_level === "high" ? "Alto" : row.interest_level === "low" ? "Baixo" : "Médio"}
+           </div>
+        </div>
+
+        {onEmail && row.status === "interest" && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); onEmail(); }}
+            className="w-full mt-1 h-8 bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest gap-2 hover:bg-[#A855F7]/20 hover:text-[#A855F7] hover:border-[#A855F7]/30 transition-all"
+          >
+            <Mail className="h-3 w-3" /> Enviar Email
+          </Button>
+        )}
       </div>
     </Card>
   );
 }
 
-function EditDialog({ row, history, onClose, onChange, onArchive, onGenerateEmail }: {
+function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGenerateEmail }: {
   row: Row | null;
   history: HistoryRow[];
   onClose: () => void;
   onChange: (patch: Partial<Row>) => void;
+  onMove: (status: string) => void;
   onArchive: () => void;
   onGenerateEmail: () => void;
 }) {
-  const [notes, setNotes] = useState("");
-  useEffect(() => { setNotes(row?.notes ?? ""); }, [row?.id]);
+  const [localNotes, setLocalNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  
+  useEffect(() => { 
+    if (row) setLocalNotes(row.notes ?? ""); 
+  }, [row?.id]);
+
+  useEffect(() => {
+    if (!row || localNotes === row.notes) return;
+    const t = setTimeout(() => {
+      setIsSaving(true);
+      onChange({ notes: localNotes });
+      setTimeout(() => setIsSaving(false), 1000);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [localNotes]);
 
   if (!row) return null;
+
+  const currentStatus = COLUMNS.find(c => c.key === row.status);
+  const checklist = [
+    { k: "email_sent" as const, label: "Enviei o email de contato?" },
+    { k: "response_received" as const, label: "Recebi resposta?" },
+    { k: "applied" as const, label: "Já me candidatei?" },
+  ];
+  
+  const completedSteps = checklist.filter(s => !!row[s.k]).length;
+  const progressPercent = Math.round((completedSteps / checklist.length) * 100);
+
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{row.universities?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {row.universities?.state}, {row.universities?.country === "USA" ? "EUA" : "Canadá"}
-              {row.universities?.division && <> · {row.universities.division}</>}
-              {row.universities?.estimated_cost_usd && <> · ~${row.universities.estimated_cost_usd.toLocaleString()}/ano</>}
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="text-lilac-500 border-lilac-500/30 hover:bg-lilac-500/10 gap-2"
-              onClick={onGenerateEmail}
-            >
-              <Sparkles className="h-3.5 w-3.5" /> Gerar email com IA
-            </Button>
-          </div>
-
-          <div>
-            <Label className="text-xs uppercase text-muted-foreground">Checklist</Label>
-            <div className="space-y-2 mt-2">
-              {[
-                { k: "email_sent" as const, label: "📬 Email enviado" },
-                { k: "response_received" as const, label: "💬 Resposta recebida" },
-                { k: "applied" as const, label: "📝 Aplicado" },
-              ].map(({ k, label }) => (
-                <div key={k} className="flex items-center gap-2">
-                  <Checkbox
-                    id={k}
-                    checked={!!row[k]}
-                    onCheckedChange={(v) => {
-                      // Travas: não pode marcar resposta sem email, nem aplicado sem email
-                      if (v && k === "response_received" && !row.email_sent) { toast.error("Marque 'Email enviado' antes."); return; }
-                      if (v && k === "applied" && !row.email_sent) { toast.error("Marque 'Email enviado' antes."); return; }
-                      onChange({ [k]: !!v });
-                    }}
-                  />
-                  <label htmlFor={k} className="text-sm cursor-pointer">{label}</label>
+      <DialogContent className="max-w-3xl bg-[#0F0F1A] border-white/5 p-0 overflow-hidden shadow-2xl ring-1 ring-white/10">
+        <div className="flex h-[85vh]">
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col min-w-0">
+             {/* Header Section */}
+             <div className="p-8 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex items-start justify-between">
+                   <div className="space-y-1">
+                      <h2 className="text-2xl font-black text-white leading-tight">{row.universities?.name}</h2>
+                      <div className="flex items-center gap-3 text-sm text-white/50">
+                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {row.universities?.state}, {row.universities?.country}</span>
+                        <span className="flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {row.universities?.division?.replace("_", " ")}</span>
+                        <span className="flex items-center gap-1 text-emerald-400 font-bold"><DollarSign className="h-3.5 w-3.5" /> ${row.universities?.estimated_cost_usd?.toLocaleString()}/ano</span>
+                      </div>
+                   </div>
+                   <Badge className={cn("px-3 py-1 text-[10px] font-black uppercase tracking-widest border-0", currentStatus?.bg, currentStatus?.text)}>
+                     {currentStatus?.label}
+                   </Badge>
                 </div>
-              ))}
-            </div>
-          </div>
+             </div>
 
-          <div>
-            <Label className="text-xs uppercase text-muted-foreground">Nível de interesse</Label>
-            <div className="flex gap-2 mt-2">
-              {["low", "medium", "high"].map(lv => (
-                <Button key={lv} variant={row.interest_level === lv ? "default" : "outline"} size="sm" onClick={() => onChange({ interest_level: lv })}>
-                  {lv === "low" ? "🔴 Baixo" : lv === "medium" ? "🟡 Médio" : "🟢 Alto"}
+             <div className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-thin">
+                {/* Checklist Section */}
+                <section className="space-y-6">
+                   <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <Activity className="h-4 w-4" /> Checklist de Etapas
+                      </h3>
+                      <div className="flex items-center gap-3">
+                         <span className="text-[10px] font-black text-[#A855F7]">{progressPercent}% Concluído</span>
+                         <Progress value={progressPercent} className="w-24 h-1.5 bg-white/5">
+                           <div className="h-full bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] rounded-full" style={{ width: `${progressPercent}%` }} />
+                         </Progress>
+                      </div>
+                   </div>
+                   
+                   <div className="space-y-3">
+                      {checklist.map(({ k, label }) => (
+                        <div key={k} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-colors">
+                           <span className="text-sm font-medium text-white/80">{label}</span>
+                           <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => onChange({ [k]: true })}
+                                className={cn(
+                                  "h-8 px-4 text-[10px] font-bold rounded-lg transition-all",
+                                  row[k] === true ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-white/5 text-white/40 hover:text-white"
+                                )}
+                              >
+                                {row[k] === true && <Check className="h-3 w-3 mr-1.5" />} Sim ✓
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => onChange({ [k]: false })}
+                                className={cn(
+                                  "h-8 px-4 text-[10px] font-bold rounded-lg transition-all",
+                                  row[k] === false ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "bg-white/5 text-white/40 hover:text-white"
+                                )}
+                              >
+                                {row[k] === false && <X className="h-3 w-3 mr-1.5" />} Não ✗
+                              </Button>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </section>
+
+                {/* Interest Level */}
+                <section className="space-y-4">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-white/40">Nível de Interesse</h3>
+                   <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { v: "low", l: "Baixo", c: "rose" },
+                        { v: "medium", l: "Médio", c: "amber" },
+                        { v: "high", l: "Alto", c: "emerald" },
+                      ].map(opt => (
+                        <Button 
+                          key={opt.v}
+                          variant="ghost"
+                          onClick={() => onChange({ interest_level: opt.v })}
+                          className={cn(
+                            "h-12 flex flex-col gap-1 rounded-xl border border-white/5 transition-all font-black text-[10px] uppercase",
+                            row.interest_level === opt.v ? `bg-${opt.c}-500/10 border-${opt.c}-500/40 text-${opt.c}-500 ring-1 ring-${opt.c}-500/20` : "bg-white/5 text-white/40 hover:bg-white/10"
+                          )}
+                        >
+                          <span className={cn("h-1.5 w-1.5 rounded-full", `bg-${opt.c}-500`, row.interest_level === opt.v && "animate-pulse")} />
+                          {opt.l}
+                        </Button>
+                      ))}
+                   </div>
+                </section>
+
+                {/* Notes */}
+                <section className="space-y-4">
+                   <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-white/40">Observações</h3>
+                      {isSaving && <span className="text-[9px] text-primary-glow animate-pulse">Salvo automaticamente</span>}
+                   </div>
+                   <Textarea 
+                     value={localNotes}
+                     onChange={(e) => setLocalNotes(e.target.value)}
+                     placeholder="Notas pessoais, estratégia, contexto..."
+                     className="bg-white/5 border-white/10 rounded-xl min-h-[120px] text-sm focus:border-[#A855F7]/40 focus:ring-1 focus:ring-[#A855F7]/20 transition-all"
+                   />
+                </section>
+
+                {/* Uni Link */}
+                <section className="p-6 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/5 flex items-center justify-between gap-6">
+                   <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2 text-white/80">
+                         <GraduationCap className="h-4 w-4 text-[#A855F7]" />
+                         <span className="text-sm font-bold">Saiba mais sobre a instituição</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Acesse o ranking completo, áreas de estudo, bolsas disponíveis e requisitos.
+                      </p>
+                   </div>
+                   <Button variant="outline" className="border-[#FF6B2B]/40 text-[#FF6B2B] hover:bg-[#FF6B2B]/10 gap-2 font-bold" asChild>
+                      <a href={row.universities?.website || "#"} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-4 w-4" /> Ver Página
+                      </a>
+                   </Button>
+                </section>
+             </div>
+
+             {/* Footer */}
+             <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between gap-4">
+                <Button variant="ghost" onClick={onArchive} className="text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 gap-2 font-black text-[10px] uppercase">
+                  <Archive className="h-4 w-4" /> Arquivar
                 </Button>
-              ))}
-            </div>
+                <div className="flex gap-3">
+                   <Button variant="outline" onClick={onClose} className="border-white/10 text-white hover:bg-white/5 font-black text-[10px] uppercase">
+                     Fechar
+                   </Button>
+                   <Button 
+                    onClick={() => {
+                      const statusOrder = COLUMNS.map(c => c.key);
+                      const currentIdx = statusOrder.indexOf(row.status);
+                      if (currentIdx < statusOrder.length - 1) {
+                        onMove(statusOrder[currentIdx + 1]);
+                      }
+                    }} 
+                    className="bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] text-white font-black text-[10px] uppercase px-6"
+                   >
+                     Mover para próxima etapa →
+                   </Button>
+                </div>
+             </div>
           </div>
 
-          <div>
-            <Label htmlFor="notes" className="text-xs uppercase text-muted-foreground">Observações</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={() => notes !== (row.notes ?? "") && onChange({ notes })}
-              placeholder="Notas pessoais, estratégia, contexto..."
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-xs uppercase text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> Histórico</Label>
-            {history.length === 0 ? (
-              <p className="text-xs text-muted-foreground mt-1">Sem mudanças registradas.</p>
-            ) : (
-              <ul className="mt-2 space-y-1 text-xs">
-                {history.map(h => (
-                  <li key={h.id} className="flex justify-between text-muted-foreground">
-                    <span>{h.from_status ?? "—"} → <strong className="text-foreground">{h.to_status}</strong></span>
-                    <span>{new Date(h.created_at).toLocaleDateString("pt-BR")}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="flex justify-between pt-2 border-t">
-            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={onArchive}>
-              Arquivar (Rejeitado)
-            </Button>
-            <Button onClick={onClose}>Fechar</Button>
+          {/* Side Info Panel */}
+          <div className="w-[280px] border-l border-white/5 bg-black/40 flex flex-col hidden lg:flex">
+             <div className="p-6 border-b border-white/5 flex items-center gap-2">
+                <History className="h-4 w-4 text-[#A855F7]" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Histórico de Mudanças</h3>
+             </div>
+             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {history.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 opacity-30">
+                    <Activity className="h-10 w-10 mb-4" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Nenhuma mudança ainda</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-white/5">
+                    {history.map((h, i) => (
+                      <div key={h.id} className="relative pl-7 space-y-1">
+                        <div className="absolute left-0 top-1 h-4 w-4 rounded-full bg-[#1A1A2E] border border-[#A855F7]/30 flex items-center justify-center">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#A855F7]" />
+                        </div>
+                        <p className="text-xs font-bold text-white/80 leading-snug">
+                          {h.from_status ? (
+                            <>Movido de <span className="text-white/40">{COLUMNS.find(c => c.key === h.from_status)?.label}</span> para <span className="text-primary-glow">{COLUMNS.find(c => c.key === h.to_status)?.label}</span></>
+                          ) : (
+                            <>Adicionado ao Pipeline em <span className="text-primary-glow">{COLUMNS.find(c => c.key === h.to_status)?.label}</span></>
+                          )}
+                        </p>
+                        <p className="text-[9px] text-white/30 font-medium">
+                          {format(new Date(h.created_at), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+             </div>
+             <div className="p-6 border-t border-white/5">
+                <Button 
+                  onClick={onGenerateEmail}
+                  className="w-full bg-[#A855F7]/10 border border-[#A855F7]/30 text-[#A855F7] hover:bg-[#A855F7] hover:text-white transition-all gap-2 h-10 font-bold"
+                >
+                  <Sparkles className="h-4 w-4" /> Gerar Email IA
+                </Button>
+             </div>
           </div>
         </div>
       </DialogContent>
