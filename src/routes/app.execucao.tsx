@@ -170,7 +170,7 @@ function ExecucaoPage() {
   if (loading) return <div className="p-8 text-muted-foreground animate-pulse">Carregando pipeline...</div>;
 
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-8">
+    <div className="min-h-screen bg-background text-foreground p-6 md:p-10 space-y-8">
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
@@ -182,32 +182,32 @@ function ExecucaoPage() {
             <div className="space-y-1">
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Progresso Geral</div>
               <div className="flex items-center gap-3">
-                <Progress value={stats.overallProgress} className="w-32 h-2 bg-white/5">
-                  <div className="h-full bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] rounded-full" style={{ width: `${stats.overallProgress}%` }} />
+                <Progress value={stats.overallProgress} className="w-32 h-2">
+                  <div className="h-full bg-gradient-primary rounded-full" style={{ width: `${stats.overallProgress}%` }} />
                 </Progress>
-                <span className="text-sm font-bold text-primary-glow">{stats.overallProgress}%</span>
+                <span className="text-sm font-bold text-primary">{stats.overallProgress}%</span>
               </div>
             </div>
-            <div className="h-8 w-px bg-white/10 hidden sm:block" />
+            <div className="h-8 w-px bg-border hidden sm:block" />
             <div className="hidden sm:flex items-center gap-4">
               <div className="text-center">
                 <div className="text-xl font-black">{stats.total}</div>
                 <div className="text-[9px] font-bold uppercase text-muted-foreground">Total</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-black text-[#A855F7]">{stats.inProgress}</div>
+                <div className="text-xl font-black text-primary">{stats.inProgress}</div>
                 <div className="text-[9px] font-bold uppercase text-muted-foreground">Em andamento</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-black text-[#10B981]">{stats.accepted}</div>
+                <div className="text-xl font-black text-success">{stats.accepted}</div>
                 <div className="text-[9px] font-bold uppercase text-muted-foreground">Aceitas</div>
               </div>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="border-[#A855F7]/40 text-[#A855F7] hover:bg-[#A855F7]/10">
-            Ver Ranking
+          <Button variant="outline" asChild>
+            <Link to="/app/faculdades">Ver Ranking</Link>
           </Button>
           <Button className="bg-gradient-primary text-white font-bold" asChild>
             <Link to="/app/faculdades">+ Adicionar Universidade</Link>
@@ -217,14 +217,14 @@ function ExecucaoPage() {
 
       {/* CRM Tabs: Pipeline / Prazos / Documentos */}
       <Tabs defaultValue="pipeline" className="w-full">
-        <TabsList className="bg-white/5 border border-white/10 p-1 h-auto rounded-xl">
-          <TabsTrigger value="pipeline" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+        <TabsList className="bg-muted border border-border p-1 h-auto rounded-xl">
+          <TabsTrigger value="pipeline" className="gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
             <ListChecks className="h-4 w-4" /> Pipeline
           </TabsTrigger>
-          <TabsTrigger value="prazos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+          <TabsTrigger value="prazos" className="gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
             <CalendarIcon className="h-4 w-4" /> Prazos
           </TabsTrigger>
-          <TabsTrigger value="documentos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+          <TabsTrigger value="documentos" className="gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
             <FileText className="h-4 w-4" /> Documentos
           </TabsTrigger>
         </TabsList>
