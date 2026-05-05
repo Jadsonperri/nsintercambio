@@ -24,7 +24,7 @@ import {
 import { 
   Clock, AlertTriangle, Flame, GripVertical, History, Mail, 
   Sparkles, ChevronRight, X, MapPin, DollarSign, Trophy, 
-  Check, Archive, ExternalLink, Activity, Info
+  Check, Archive, ExternalLink, Activity, Info, Plus, GraduationCap
 } from "lucide-react";
 import { AIEmailGenerator } from "@/components/colleges/AIEmailGenerator";
 import confetti from "canvas-confetti";
