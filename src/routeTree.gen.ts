@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppPrazosRouteImport } from './routes/app.prazos'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppIaRouteImport } from './routes/app.ia'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
@@ -53,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrazosRoute = AppPrazosRouteImport.update({
+  id: '/prazos',
+  path: '/prazos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPerfilRoute = AppPerfilRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/ia': typeof AppIaRoute
   '/app/perfil': typeof AppPerfilRoute
+  '/app/prazos': typeof AppPrazosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
     | '/app'
   id:
     | '__root__'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/app/financeiro'
     | '/app/ia'
     | '/app/perfil'
+    | '/app/prazos'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -255,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/prazos': {
+      id: '/app/prazos'
+      path: '/prazos'
+      fullPath: '/app/prazos'
+      preLoaderRoute: typeof AppPrazosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/perfil': {
@@ -333,6 +352,7 @@ interface AppRouteChildren {
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppIaRoute: typeof AppIaRoute
   AppPerfilRoute: typeof AppPerfilRoute
+  AppPrazosRoute: typeof AppPrazosRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -346,6 +366,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppIaRoute: AppIaRoute,
   AppPerfilRoute: AppPerfilRoute,
+  AppPrazosRoute: AppPrazosRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
