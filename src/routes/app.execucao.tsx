@@ -327,7 +327,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{col.emoji}</span>
+          <span className={cn("h-2 w-2 rounded-full", col.color.replace("border-", "bg-"))} />
           <h2 className="font-black text-sm uppercase tracking-tight">{col.label}</h2>
           <Badge variant="secondary" className="bg-white/10 text-white text-[10px] px-1.5 py-0 h-4 border-0">
             {rows.length}
