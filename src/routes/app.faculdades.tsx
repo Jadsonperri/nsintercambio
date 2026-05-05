@@ -59,6 +59,106 @@ const DIVISION_OPTIONS = [
   { v: "U_SPORTS", l: "U SPORTS 🇨🇦" },
 ];
 
+function PipelineCard({ uni, userId, onClick }: { uni: Uni; userId: string | null; onClick: () => void }) {
+  const [data, setData] = useState<PipelineRow | null>(null);
+
+  useEffect(() => {
+    if (!userId || !uni.id) return;
+    supabase
+      .from("pipeline")
+      .select("email_sent, response_received, applied, interest_level, notes")
+      .eq("user_id", userId)
+      .eq("university_id", uni.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setData(data as PipelineRow);
+      });
+  }, [uni.id, userId]);
+
+  const progress = data ? (
+    (data.email_sent ? 33 : 0) + 
+    (data.response_received ? 33 : 0) + 
+    (data.applied ? 34 : 0)
+  ) : 0;
+
+  const interestColor = 
+    data?.interest_level === "high" ? "bg-emerald-500" : 
+    data?.interest_level === "low" ? "bg-rose-500" : "bg-amber-500";
+
+  return (
+    <Card 
+      onClick={onClick}
+      className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-[#A855F7]/10 transition-all duration-300 border-[#A855F7]/10 hover:border-[#A855F7]/40 bg-card/40 backdrop-blur-sm"
+    >
+      <div className="p-5 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate group-hover:text-[#A855F7] transition-colors">{uni.name}</h3>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <MapPin className="h-3 w-3" /> {uni.city}, {uni.state}
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-full bg-white/5 border border-white/10">
+            <div className={`h-1.5 w-1.5 rounded-full ${interestColor}`} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              {data?.interest_level === "high" ? "Alto" : data?.interest_level === "low" ? "Baixo" : "Médio"}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+            <span>Progresso</span>
+            <span className="text-[#A855F7]">{progress}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+            <div 
+              className="h-full bg-gradient-to-r from-[#A855F7] to-[#7C3AED] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 border-t border-b border-white/5 bg-white/[0.02]">
+        <div className="p-3 text-center border-r border-white/5">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Email</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.email_sent ? "bg-emerald-500/10" : "bg-white/5"}`}>
+              {data?.email_sent ? <Check className="h-3 w-3 text-emerald-500" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+        <div className="p-3 text-center border-r border-white/5">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Resposta</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.response_received ? "bg-blue-500/10" : "bg-white/5"}`}>
+              {data?.response_received ? <MessageSquare className="h-3 w-3 text-blue-400" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+        <div className="p-3 text-center">
+          <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Aplicado</div>
+          <div className="flex justify-center">
+            <div className={`h-5 w-5 rounded-full flex items-center justify-center ${data?.applied ? "bg-amber-500/10" : "bg-white/5"}`}>
+              {data?.applied ? <FileCheck className="h-3 w-3 text-amber-500" /> : <X className="h-3 w-3 text-white/20" />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 bg-gradient-to-t from-black/20 to-transparent flex items-center justify-between">
+        <div className="text-[10px] text-muted-foreground italic truncate max-w-[140px]">
+          {data?.notes ? data.notes : "Sem observações..."}
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#A855F7] group-hover:translate-x-1 transition-transform">
+          GERENCIAR <ChevronRight className="h-3 w-3" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function FaculdadesPage() {
   const { user, profile } = useAuth();
   const [unis, setUnis] = useState<Uni[]>([]);
@@ -715,81 +815,7 @@ function FaculdadesPage() {
               {(() => {
                 const pipeUnis = unis.filter(u => pipeIds.has(u.id));
                 return pipeUnis.map(u => (
-                  <Card 
-                    key={u.id}
-                    onClick={() => setSelectedUni(u)}
-                    className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-[#A855F7]/10 transition-all duration-300 border-[#A855F7]/10 hover:border-[#A855F7]/40 bg-card/40 backdrop-blur-sm"
-                  >
-                    {/* Header: Uni Name & Interest Level */}
-                    <div className="p-5 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-lg leading-tight truncate group-hover:text-[#A855F7] transition-colors">{u.name}</h3>
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <MapPin className="h-3 w-3" /> {u.city}, {u.state}
-                          </p>
-                        </div>
-                        <div className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-full bg-white/5 border border-white/10">
-                          <div className="h-1.5 w-1.5 rounded-full bg-[#A855F7]" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Interesse</span>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar Simplificada */}
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                          <span>Progresso</span>
-                          <span className="text-[#A855F7]">Academy</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
-                          <div className="h-full bg-gradient-to-r from-[#A855F7] to-[#7C3AED] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" style={{ width: '33%' }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats/Status Grid */}
-                    <div className="grid grid-cols-3 border-t border-b border-white/5 bg-white/[0.02]">
-                      <div className="p-3 text-center border-r border-white/5">
-                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Email</div>
-                        <div className="flex justify-center">
-                          <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                            <Check className="h-3 w-3 text-emerald-500" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 text-center border-r border-white/5">
-                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Resposta</div>
-                        <div className="flex justify-center">
-                          <div className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center">
-                            <X className="h-3 w-3 text-white/20" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 text-center">
-                        <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Aplicado</div>
-                        <div className="flex justify-center">
-                          <div className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center">
-                            <X className="h-3 w-3 text-white/20" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer: Action */}
-                    <div className="p-4 bg-gradient-to-t from-black/20 to-transparent flex items-center justify-between">
-                      <div className="flex -space-x-1.5">
-                        <div className="h-6 w-6 rounded-full border-2 border-[#12121F] bg-[#A855F7]/20 flex items-center justify-center">
-                          <Mail className="h-3 w-3 text-[#A855F7]" />
-                        </div>
-                        <div className="h-6 w-6 rounded-full border-2 border-[#12121F] bg-blue-500/20 flex items-center justify-center">
-                          <Globe className="h-3 w-3 text-blue-400" />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#A855F7] group-hover:translate-x-1 transition-transform">
-                        GERENCIAR <ChevronRight className="h-3 w-3" />
-                      </div>
-                    </div>
-                  </Card>
+                  <PipelineCard key={u.id} uni={u} userId={user?.id ?? null} onClick={() => setSelectedUni(u)} />
                 ));
               })()}
             </div>
