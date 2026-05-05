@@ -1,44 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, List, ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, differenceInDays } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Calendar as CalendarIcon, List, ChevronLeft, ChevronRight,
+  Plus, Trash2, Clock,
+} from "lucide-react";
+import {
+  format, addMonths, subMonths, startOfMonth, endOfMonth,
+  eachDayOfInterval, isSameMonth, isSameDay, differenceInDays,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/prazos")({ component: PrazosPage });
 
-type DeadlineType = "Inscrição" | "Entrega de documentos" | "Resposta esperada" | "Início do semestre";
-
 interface Deadline {
   id: string;
-  university: string;
-  type: DeadlineType;
-  date: Date;
+  title: string;
+  description: string | null;
+  date: string; // ISO
 }
 
-// Mock data for initial implementation
-const MOCK_DEADLINES: Deadline[] = [
-  { id: "1", university: "Harvard University", type: "Inscrição", date: addDays(new Date(), 5) },
-  { id: "2", university: "Stanford University", type: "Entrega de documentos", date: addDays(new Date(), 15) },
-  { id: "3", university: "MIT", type: "Resposta esperada", date: addDays(new Date(), 45) },
-  { id: "4", university: "Oxford University", type: "Início do semestre", date: addDays(new Date(), 90) },
-  { id: "5", university: "University of Toronto", type: "Inscrição", date: addDays(new Date(), 3) },
-];
-
 export function PrazosPage() {
+  const { user } = useAuth();
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [editing, setEditing] = useState<Deadline | null>(null);
+  const [creating, setCreating] = useState<{ date?: Date } | null>(null);
+
+  const load = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("deadlines")
+      .select("id, title, description, date")
+      .eq("user_id", user.id)
+      .order("date", { ascending: true });
+    setDeadlines((data as Deadline[]) ?? []);
+  };
+  useEffect(() => { load(); }, [user]);
 
   const days = useMemo(() => {
     const start = startOfMonth(currentMonth);
@@ -46,221 +56,226 @@ export function PrazosPage() {
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
-  const getUrgencyColor = (date: Date) => {
-    const diff = differenceInDays(date, new Date());
-    if (diff <= 7) return "bg-red-500";
-    if (diff <= 30) return "bg-amber-500";
-    return "bg-emerald-500";
+  const urgencyClass = (iso: string) => {
+    const diff = differenceInDays(new Date(iso), new Date());
+    if (diff <= 7) return "bg-destructive text-destructive-foreground";
+    if (diff <= 30) return "bg-warning text-warning-foreground";
+    return "bg-success text-success-foreground";
   };
 
-  const getUrgencyBorder = (date: Date) => {
-    const diff = differenceInDays(date, new Date());
-    if (diff <= 7) return "border-red-500/50";
-    if (diff <= 30) return "border-amber-500/50";
-    return "border-emerald-500/50";
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("deadlines").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Prazo removido");
+    setEditing(null);
+    load();
   };
-
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-
-  const urgentDeadline = MOCK_DEADLINES.find(d => differenceInDays(d.date, new Date()) <= 7);
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      {urgentDeadline && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 animate-pulse">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm font-medium text-red-400">
-            ⚠️ {urgentDeadline.type} na {urgentDeadline.university} fecha em {differenceInDays(urgentDeadline.date, new Date())} dias
-          </p>
-        </div>
-      )}
-
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-display">Calendário de Prazos</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Acompanhe datas críticas de suas aplicações</p>
+          <p className="text-muted-foreground mt-1 text-sm">Adicione e acompanhe datas importantes</p>
         </div>
-
-        <div className="flex items-center bg-sidebar rounded-lg p-1 border border-sidebar-border self-start md:self-center">
-          <Button
-            variant={view === "calendar" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("calendar")}
-            className="gap-2"
-          >
-            <CalendarIcon className="h-4 w-4" /> Mensal
-          </Button>
-          <Button
-            variant={view === "list" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("list")}
-            className="gap-2"
-          >
-            <List className="h-4 w-4" /> Lista
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-muted rounded-lg p-1 border border-border">
+            <Button variant={view === "calendar" ? "secondary" : "ghost"} size="sm" onClick={() => setView("calendar")} className="gap-2">
+              <CalendarIcon className="h-4 w-4" /> Mensal
+            </Button>
+            <Button variant={view === "list" ? "secondary" : "ghost"} size="sm" onClick={() => setView("list")} className="gap-2">
+              <List className="h-4 w-4" /> Lista
+            </Button>
+          </div>
+          <Button onClick={() => setCreating({ date: new Date() })} className="gap-2">
+            <Plus className="h-4 w-4" /> Novo prazo
           </Button>
         </div>
       </div>
 
       {view === "calendar" ? (
-        <Card className="p-6 border-sidebar-border bg-sidebar/30 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-8">
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold capitalize">
               {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
             </h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={prevMonth} className="h-8 w-8">
+              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="h-8 w-8">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={nextMonth} className="h-8 w-8">
+              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="h-8 w-8">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-px bg-sidebar-border rounded-lg overflow-hidden border border-sidebar-border">
-            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
-              <div key={day} className="bg-sidebar/50 p-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {day}
+          <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden border border-border">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
+              <div key={d} className="bg-muted/50 p-2 text-center text-xs font-semibold text-muted-foreground uppercase">
+                {d}
               </div>
             ))}
             {Array.from({ length: startOfMonth(currentMonth).getDay() }).map((_, i) => (
-              <div key={`empty-${i}`} className="bg-sidebar/20 h-32 p-2" />
+              <div key={`e-${i}`} className="bg-muted/20 h-28" />
             ))}
             {days.map((day) => {
-              const dayDeadlines = MOCK_DEADLINES.filter(d => isSameDay(d.date, day));
+              const dayDeadlines = deadlines.filter((d) => isSameDay(new Date(d.date), day));
               const isToday = isSameDay(day, new Date());
-
               return (
-                <div key={day.toString()} className={cn(
-                  "bg-sidebar/40 h-32 p-2 relative transition-colors hover:bg-sidebar/60 border-t border-l border-sidebar-border",
-                  !isSameMonth(day, currentMonth) && "opacity-20",
-                  isToday && "bg-primary/5"
-                )}>
+                <button
+                  key={day.toString()}
+                  onClick={() => setCreating({ date: day })}
+                  className={cn(
+                    "bg-card hover:bg-accent/40 transition-colors text-left h-28 p-2 relative",
+                    !isSameMonth(day, currentMonth) && "opacity-40",
+                    isToday && "ring-1 ring-primary ring-inset",
+                  )}
+                >
                   <span className={cn(
                     "text-sm font-medium",
-                    isToday && "h-6 w-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center -ml-1 -mt-1"
+                    isToday && "h-6 w-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center",
                   )}>
                     {format(day, "d")}
                   </span>
                   <div className="mt-1 space-y-1">
-                    {dayDeadlines.map((deadline) => (
-                      <button
-                        key={deadline.id}
-                        onClick={() => setSelectedDeadline(deadline)}
+                    {dayDeadlines.slice(0, 3).map((dl) => (
+                      <span
+                        key={dl.id}
+                        onClick={(e) => { e.stopPropagation(); setEditing(dl); }}
                         className={cn(
-                          "w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate text-white transition-transform hover:scale-[1.02]",
-                          getUrgencyColor(deadline.date)
+                          "block w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate cursor-pointer hover:opacity-90",
+                          urgencyClass(dl.date),
                         )}
                       >
-                        {deadline.university}
-                      </button>
+                        {dl.title}
+                      </span>
                     ))}
+                    {dayDeadlines.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground">+{dayDeadlines.length - 3} mais</span>
+                    )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         </Card>
       ) : (
-        <div className="space-y-4">
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-            {["Todos", "Inscrição", "Entrega de documentos", "Resposta esperada", "Início do semestre"].map((filter) => (
-              <Button key={filter} variant="outline" size="sm" className="whitespace-nowrap rounded-full">
-                {filter}
+        <div className="grid gap-3">
+          {deadlines.length === 0 && (
+            <Card className="p-10 text-center">
+              <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhum prazo cadastrado</p>
+              <Button onClick={() => setCreating({ date: new Date() })} className="mt-4 gap-2">
+                <Plus className="h-4 w-4" /> Adicionar primeiro prazo
               </Button>
-            ))}
-          </div>
-
-          <div className="grid gap-3">
-            {MOCK_DEADLINES.sort((a, b) => a.date.getTime() - b.date.getTime()).map((deadline) => {
-              const daysRemaining = differenceInDays(deadline.date, new Date());
-              return (
-                <Card key={deadline.id} className="p-4 bg-sidebar/40 hover:bg-sidebar/60 border-sidebar-border transition-all group">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("p-3 rounded-xl", getUrgencyColor(deadline.date), "bg-opacity-20")}>
-                        <Clock className={cn("h-5 w-5", getUrgencyColor(deadline.date).replace("bg-", "text-"))} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white group-hover:text-primary transition-colors">{deadline.university}</h3>
-                        <p className="text-sm text-muted-foreground">{deadline.type}</p>
-                      </div>
+            </Card>
+          )}
+          {deadlines.map((dl) => {
+            const days = differenceInDays(new Date(dl.date), new Date());
+            return (
+              <Card key={dl.id} className="p-4 hover:bg-accent/30 transition-colors cursor-pointer" onClick={() => setEditing(dl)}>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={cn("p-3 rounded-xl", urgencyClass(dl.date))}>
+                      <Clock className="h-5 w-5" />
                     </div>
-                    <div className="flex items-center gap-6 text-right">
-                      <div className="hidden md:block">
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Data</p>
-                        <p className="text-sm font-medium">{format(deadline.date, "dd/MM/yyyy")}</p>
-                      </div>
-                      <div>
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                          getUrgencyColor(deadline.date),
-                          "bg-opacity-20",
-                          getUrgencyColor(deadline.date).replace("bg-", "text-")
-                        )}>
-                          {daysRemaining <= 7 ? "Crítico" : daysRemaining <= 30 ? "Próximo" : "Tranquilo"}
-                        </span>
-                        <p className="text-[10px] mt-1 text-muted-foreground">{daysRemaining} dias restantes</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-primary/20 hover:text-primary">
-                        Ver Pipeline
-                      </Button>
+                    <div className="min-w-0">
+                      <h3 className="font-bold truncate">{dl.title}</h3>
+                      {dl.description && <p className="text-sm text-muted-foreground truncate">{dl.description}</p>}
                     </div>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-medium">{format(new Date(dl.date), "dd/MM/yyyy")}</p>
+                    <p className="text-xs text-muted-foreground">{days >= 0 ? `${days} dias` : "vencido"}</p>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      <Dialog open={!!selectedDeadline} onOpenChange={(open) => !open && setSelectedDeadline(null)}>
-        {selectedDeadline && (
-          <DialogContent className="sm:max-w-[425px] bg-sidebar border-sidebar-border">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                <Clock className={cn("h-5 w-5", getUrgencyColor(selectedDeadline.date).replace("bg-", "text-"))} />
-                Detalhes do Prazo
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Informações críticas sobre sua aplicação.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase font-semibold">Universidade</p>
-                <p className="text-lg font-bold text-white">{selectedDeadline.university}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold">Tipo</p>
-                  <p className="text-sm font-medium">{selectedDeadline.type}</p>
-                </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold">Vencimento</p>
-                  <p className="text-sm font-medium">{format(selectedDeadline.date, "dd 'de' MMMM", { locale: ptBR })}</p>
-                </div>
-              </div>
-              <div className={cn(
-                "p-4 rounded-xl border flex items-center gap-3",
-                getUrgencyColor(selectedDeadline.date),
-                "bg-opacity-10",
-                getUrgencyBorder(selectedDeadline.date)
-              )}>
-                <AlertCircle className={cn("h-5 w-5", getUrgencyColor(selectedDeadline.date).replace("bg-", "text-"))} />
-                <p className="text-sm font-medium">
-                  {differenceInDays(selectedDeadline.date, new Date())} dias restantes para completar esta etapa.
-                </p>
-              </div>
-            </div>
-            <DialogFooter className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setSelectedDeadline(null)} className="flex-1">Fechar</Button>
-              <Button className="bg-gradient-primary flex-1">Ver no Pipeline</Button>
-            </DialogFooter>
-          </DialogContent>
-        )}
-      </Dialog>
+      {(editing || creating) && (
+        <DeadlineDialog
+          open={!!(editing || creating)}
+          deadline={editing}
+          initialDate={creating?.date}
+          onClose={() => { setEditing(null); setCreating(null); }}
+          onSaved={() => { load(); setEditing(null); setCreating(null); }}
+          onDelete={editing ? () => remove(editing.id) : undefined}
+          userId={user?.id ?? ""}
+        />
+      )}
     </div>
+  );
+}
+
+function DeadlineDialog({ open, deadline, initialDate, onClose, onSaved, onDelete, userId }: {
+  open: boolean;
+  deadline: Deadline | null;
+  initialDate?: Date;
+  onClose: () => void;
+  onSaved: () => void;
+  onDelete?: () => void;
+  userId: string;
+}) {
+  const [title, setTitle] = useState(deadline?.title ?? "");
+  const [description, setDescription] = useState(deadline?.description ?? "");
+  const [date, setDate] = useState(
+    deadline?.date
+      ? format(new Date(deadline.date), "yyyy-MM-dd")
+      : format(initialDate ?? new Date(), "yyyy-MM-dd")
+  );
+
+  const save = async () => {
+    if (!title.trim() || !date) return toast.error("Título e data obrigatórios");
+    if (deadline) {
+      const { error } = await supabase.from("deadlines")
+        .update({ title, description, date: new Date(date).toISOString() })
+        .eq("id", deadline.id);
+      if (error) return toast.error(error.message);
+      toast.success("Prazo atualizado");
+    } else {
+      const { error } = await supabase.from("deadlines")
+        .insert({ user_id: userId, title, description, date: new Date(date).toISOString() });
+      if (error) return toast.error(error.message);
+      toast.success("Prazo criado");
+    }
+    onSaved();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{deadline ? "Editar prazo" : "Novo prazo"}</DialogTitle>
+          <DialogDescription>Adicione informações sobre essa data importante.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Título</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Inscrição Harvard" />
+          </div>
+          <div className="space-y-2">
+            <Label>Data</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Descrição</Label>
+            <Textarea value={description ?? ""} onChange={(e) => setDescription(e.target.value)} placeholder="Detalhes opcionais..." />
+          </div>
+        </div>
+        <DialogFooter className="flex-row gap-2">
+          {onDelete && (
+            <Button variant="ghost" onClick={onDelete} className="text-destructive gap-2">
+              <Trash2 className="h-4 w-4" /> Excluir
+            </Button>
+          )}
+          <div className="flex-1" />
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={save}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
