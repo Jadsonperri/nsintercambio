@@ -170,11 +170,11 @@ function ExecucaoPage() {
   if (loading) return <div className="p-8 text-muted-foreground animate-pulse">Carregando pipeline...</div>;
 
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-10">
+    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-8">
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-black font-display tracking-tight">Pipeline</h1>
+          <h1 className="text-4xl font-black font-display tracking-tight">CRM</h1>
           <p className="text-muted-foreground text-lg max-w-xl">
             Acompanhe sua jornada de candidatura em cada universidade
           </p>
