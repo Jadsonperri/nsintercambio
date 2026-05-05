@@ -95,7 +95,7 @@ function ExecucaoPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
   const [emailGenFor, setEmailGenFor] = useState<Row | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -269,7 +269,7 @@ function ExecucaoPage() {
         onClose={() => setEditing(null)}
         onChange={(patch) => editing && updateRow(editing.id, patch)}
         onArchive={() => { if (editing) { archive(editing); setEditing(null); } }}
-        onGenerateEmail={() => setEditing(null) || setEmailGenFor(editing)}
+        onGenerateEmail={() => { setEmailGenFor(editing); setEditing(null); }}
       />
 
       {emailGenFor && (
