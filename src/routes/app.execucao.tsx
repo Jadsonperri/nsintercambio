@@ -308,7 +308,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
         onClick={onToggleCollapse}
         className="w-12 h-[600px] flex flex-col items-center py-6 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
       >
-        <span className="text-lg mb-4">{col.emoji}</span>
+        <div className={cn("h-2 w-2 rounded-full mb-4", col.color.replace("border-", "bg-"))} />
         <div className="vertical-text font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
           {col.label} ({rows.length})
         </div>
