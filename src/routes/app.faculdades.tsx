@@ -172,7 +172,7 @@ function FaculdadesPage() {
   const [scholarshipOnly, setScholarshipOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"recommended" | "cost_asc" | "cost_desc" | "chance" | "az">("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [costRange, setCostRange] = useState<[number, number]>([0, 80000]);
+  const [costRange, setCostRange] = useState<[number, number]>([0, 150000]);
   const [minChance, setMinChance] = useState(0);
 
   const [visibleCount, setVisibleCount] = useState(20);
