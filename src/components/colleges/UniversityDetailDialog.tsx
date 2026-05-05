@@ -3,7 +3,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, DollarSign, Trophy, GraduationCap, ExternalLink, Mail, MessageSquare, FileCheck, Loader2 } from "lucide-react";
+import { Star, MapPin, DollarSign, Trophy, GraduationCap, ExternalLink, Mail, MessageSquare, FileCheck, Loader2, Sparkles } from "lucide-react";
+import { AIEmailGenerator } from "./AIEmailGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -51,6 +52,7 @@ export function UniversityDetailDialog({
   const [row, setRow] = useState<PipelineRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showEmailGen, setShowEmailGen] = useState(false);
 
   useEffect(() => {
     if (!open || !uni || !userId || !inPipeline) { setRow(null); return; }
@@ -230,7 +232,7 @@ export function UniversityDetailDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-4 border-t border-white/5 bg-black/20">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-white/5 bg-black/20">
           <div className="flex gap-2">
             {uni.website && (
               <Button
@@ -242,6 +244,16 @@ export function UniversityDetailDialog({
                 <a href={uni.website} target="_blank" rel="noreferrer">
                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Site oficial
                 </a>
+              </Button>
+            )}
+            {inPipeline && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#A855F7]/40 text-[#A855F7] hover:bg-[#A855F7]/10 bg-transparent gap-2"
+                onClick={() => setShowEmailGen(true)}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Gerar email com IA
               </Button>
             )}
           </div>
@@ -256,13 +268,20 @@ export function UniversityDetailDialog({
             </Button>
             <Button
               size="sm"
-              className={inPipeline ? "bg-rose-500/90 hover:bg-rose-500" : "bg-[#A855F7] hover:bg-[#9333EA]"}
+              className={inPipeline ? "bg-rose-500/90 hover:bg-rose-500 text-white" : "bg-[#A855F7] hover:bg-[#9333EA] text-white"}
               onClick={() => onTogglePipeline(uni.id)}
             >
               {inPipeline ? "Remover do pipeline" : "Adicionar ao pipeline"}
             </Button>
           </div>
         </div>
+
+        <AIEmailGenerator 
+          isOpen={showEmailGen}
+          onClose={() => setShowEmailGen(false)}
+          universityName={uni.name}
+          onMarkAsSent={() => update({ email_sent: true })}
+        />
       </DialogContent>
     </Dialog>
   );
