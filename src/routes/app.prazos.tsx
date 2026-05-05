@@ -35,7 +35,7 @@ const MOCK_DEADLINES: Deadline[] = [
   { id: "5", university: "University of Toronto", type: "Inscrição", date: addDays(new Date(), 3) },
 ];
 
-function PrazosPage() {
+export function PrazosPage() {
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null);

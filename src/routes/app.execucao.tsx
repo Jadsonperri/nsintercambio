@@ -22,15 +22,19 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { 
-  Clock, AlertTriangle, Flame, GripVertical, History, Mail, 
-  Sparkles, ChevronRight, X, MapPin, DollarSign, Trophy, 
-  Check, Archive, ExternalLink, Activity, Info, Plus, GraduationCap
+  AlertTriangle, GripVertical, History, Mail, 
+  Sparkles, X, MapPin, DollarSign, Trophy, 
+  Check, Archive, ExternalLink, Activity, Info, Plus, GraduationCap,
+  ListChecks, Calendar as CalendarIcon, FileText
 } from "lucide-react";
 import { AIEmailGenerator } from "@/components/colleges/AIEmailGenerator";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PrazosPage } from "./app.prazos";
+import { DocumentosPage } from "./app.documentos";
 
 export const Route = createFileRoute("/app/execucao")({ component: ExecucaoPage });
 
@@ -67,12 +71,12 @@ type HistoryRow = {
 };
 
 const COLUMNS = [
-  { key: "interest", label: "Interesse", emoji: "👀", color: "border-[#F59E0B]", bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]" },
-  { key: "email_sent", label: "Email Enviado", emoji: "📧", color: "border-[#3B82F6]", bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]" },
-  { key: "response", label: "Resposta Recebida", emoji: "💬", color: "border-[#A855F7]", bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
-  { key: "applied", label: "Aplicado", emoji: "📝", color: "border-[#FF6B2B]", bg: "bg-[#FF6B2B]/10", text: "text-[#FF6B2B]" },
-  { key: "accepted", label: "Aceito", emoji: "✅", color: "border-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
-  { key: "rejected", label: "Rejeitado", emoji: "❌", color: "border-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", collapsible: true },
+  { key: "interest", label: "Interesse", color: "border-[#F59E0B]", bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]" },
+  { key: "email_sent", label: "Email Enviado", color: "border-[#3B82F6]", bg: "bg-[#3B82F6]/10", text: "text-[#3B82F6]" },
+  { key: "response", label: "Resposta Recebida", color: "border-[#A855F7]", bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
+  { key: "applied", label: "Aplicado", color: "border-[#FF6B2B]", bg: "bg-[#FF6B2B]/10", text: "text-[#FF6B2B]" },
+  { key: "accepted", label: "Aceito", color: "border-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
+  { key: "rejected", label: "Rejeitado", color: "border-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", collapsible: true },
 ];
 
 function daysSince(iso: string | null) {
@@ -146,7 +150,7 @@ function ExecucaoPage() {
     if (!row || row.status === overId) return;
     
     updateRow(row.id, { status: overId }, { from: row.status, to: overId });
-    toast.success(`Movido para ${COLUMNS.find(c => c.key === overId)?.label ?? overId} ✓`);
+    toast.success(`Movido para ${COLUMNS.find(c => c.key === overId)?.label ?? overId}`);
   };
 
   const stats = useMemo(() => {
@@ -166,11 +170,11 @@ function ExecucaoPage() {
   if (loading) return <div className="p-8 text-muted-foreground animate-pulse">Carregando pipeline...</div>;
 
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-10">
+    <div className="min-h-screen bg-[#0F0F1A] text-white p-6 md:p-10 space-y-8">
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-black font-display tracking-tight">Pipeline</h1>
+          <h1 className="text-4xl font-black font-display tracking-tight">CRM</h1>
           <p className="text-muted-foreground text-lg max-w-xl">
             Acompanhe sua jornada de candidatura em cada universidade
           </p>
@@ -211,32 +215,57 @@ function ExecucaoPage() {
         </div>
       </header>
 
-      {/* Kanban Board */}
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide min-h-[70vh]">
-          {COLUMNS.map(col => (
-            <Column 
-              key={col.key} 
-              col={col} 
-              rows={rows.filter(r => r.status === col.key)} 
-              isCollapsed={collapsedCols.has(col.key)}
-              onToggleCollapse={() => {
-                const next = new Set(collapsedCols);
-                if (next.has(col.key)) next.delete(col.key); else next.add(col.key);
-                setCollapsedCols(next);
-              }}
-              onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
-              onEmail={(r) => setEmailGenFor(r)}
-            />
-          ))}
-        </div>
-        <DragOverlay>
-          {activeId ? (() => {
-            const r = rows.find(x => x.id === activeId);
-            return r ? <KanbanCard row={r} dragging /> : null;
-          })() : null}
-        </DragOverlay>
-      </DndContext>
+      {/* CRM Tabs: Pipeline / Prazos / Documentos */}
+      <Tabs defaultValue="pipeline" className="w-full">
+        <TabsList className="bg-white/5 border border-white/10 p-1 h-auto rounded-xl">
+          <TabsTrigger value="pipeline" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <ListChecks className="h-4 w-4" /> Pipeline
+          </TabsTrigger>
+          <TabsTrigger value="prazos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <CalendarIcon className="h-4 w-4" /> Prazos
+          </TabsTrigger>
+          <TabsTrigger value="documentos" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-white/60 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">
+            <FileText className="h-4 w-4" /> Documentos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pipeline" className="mt-6">
+          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+            <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide min-h-[70vh]">
+              {COLUMNS.map(col => (
+                <Column 
+                  key={col.key} 
+                  col={col} 
+                  rows={rows.filter(r => r.status === col.key)} 
+                  isCollapsed={collapsedCols.has(col.key)}
+                  onToggleCollapse={() => {
+                    const next = new Set(collapsedCols);
+                    if (next.has(col.key)) next.delete(col.key); else next.add(col.key);
+                    setCollapsedCols(next);
+                  }}
+                  onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
+                  onEmail={(r) => setEmailGenFor(r)}
+                />
+              ))}
+            </div>
+            <DragOverlay>
+              {activeId ? (() => {
+                const r = rows.find(x => x.id === activeId);
+                return r ? <KanbanCard row={r} dragging /> : null;
+              })() : null}
+            </DragOverlay>
+          </DndContext>
+        </TabsContent>
+
+        <TabsContent value="prazos" className="mt-6 -mx-6 md:-mx-10">
+          <PrazosPage />
+        </TabsContent>
+
+        <TabsContent value="documentos" className="mt-6 -mx-6 md:-mx-10">
+          <DocumentosPage />
+        </TabsContent>
+      </Tabs>
+
 
       {/* Expanded Dialog */}
       <EditDialog
@@ -304,7 +333,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
         onClick={onToggleCollapse}
         className="w-12 h-[600px] flex flex-col items-center py-6 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
       >
-        <span className="text-lg mb-4">{col.emoji}</span>
+        <div className={cn("h-2 w-2 rounded-full mb-4", col.color.replace("border-", "bg-"))} />
         <div className="vertical-text font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
           {col.label} ({rows.length})
         </div>
@@ -323,7 +352,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{col.emoji}</span>
+          <span className={cn("h-2 w-2 rounded-full", col.color.replace("border-", "bg-"))} />
           <h2 className="font-black text-sm uppercase tracking-tight">{col.label}</h2>
           <Badge variant="secondary" className="bg-white/10 text-white text-[10px] px-1.5 py-0 h-4 border-0">
             {rows.length}
@@ -569,7 +598,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                                   row[k] === true ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-white/5 text-white/40 hover:text-white"
                                 )}
                               >
-                                {row[k] === true && <Check className="h-3 w-3 mr-1.5" />} Sim ✓
+                                {row[k] === true && <Check className="h-3 w-3 mr-1.5" />} Sim
                               </Button>
                               <Button 
                                 size="sm" 
@@ -580,7 +609,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                                   row[k] === false ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "bg-white/5 text-white/40 hover:text-white"
                                 )}
                               >
-                                {row[k] === false && <X className="h-3 w-3 mr-1.5" />} Não ✗
+                                {row[k] === false && <X className="h-3 w-3 mr-1.5" />} Não
                               </Button>
                            </div>
                         </div>
@@ -665,7 +694,7 @@ function EditDialog({ row, history, onClose, onChange, onMove, onArchive, onGene
                     }} 
                     className="bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] text-white font-black text-[10px] uppercase px-6"
                    >
-                     Mover para próxima etapa →
+                     Mover para próxima etapa
                    </Button>
                 </div>
              </div>

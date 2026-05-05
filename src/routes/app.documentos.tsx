@@ -59,7 +59,7 @@ const UNI_DOCS: UniversityDocs[] = [
   },
 ];
 
-function DocumentosPage() {
+export function DocumentosPage() {
   const [expandedUni, setExpandedUni] = useState<string | null>(null);
 
   const readyCount = GENERAL_DOCS.filter(d => d.status === "ready").length;
