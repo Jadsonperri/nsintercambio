@@ -21,7 +21,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Clock, AlertTriangle, Flame, GripVertical, History } from "lucide-react";
+import { Clock, AlertTriangle, Flame, GripVertical, History, Mail, Sparkles } from "lucide-react";
+import { AIEmailGenerator } from "@/components/colleges/AIEmailGenerator";
 
 export const Route = createFileRoute("/app/execucao")({ component: ExecucaoPage });
 
@@ -94,8 +95,8 @@ function ExecucaoPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [showWidget, setShowWidget] = useState(false);
-
+  const [showHistory, setShowHistory] = useState(false);
+  const [emailGenFor, setEmailGenFor] = useState<Row | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const load = async () => {
@@ -226,7 +227,13 @@ function ExecucaoPage() {
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {COLUMNS.map(col => (
-              <Column key={col.key} col={col} rows={rows.filter(r => r.status === col.key)} onOpen={(r) => { setEditing(r); loadHistory(r.id); }} />
+              <Column 
+                key={col.key} 
+                col={col} 
+                rows={rows.filter(r => r.status === col.key)} 
+                onOpen={(r) => { setEditing(r); loadHistory(r.id); }} 
+                onEmail={(r) => setEmailGenFor(r)}
+              />
             ))}
           </div>
           <DragOverlay>
@@ -262,12 +269,22 @@ function ExecucaoPage() {
         onClose={() => setEditing(null)}
         onChange={(patch) => editing && updateRow(editing.id, patch)}
         onArchive={() => { if (editing) { archive(editing); setEditing(null); } }}
+        onGenerateEmail={() => setEditing(null) || setEmailGenFor(editing)}
       />
+
+      {emailGenFor && (
+        <AIEmailGenerator 
+          isOpen={!!emailGenFor}
+          onClose={() => setEmailGenFor(null)}
+          universityName={emailGenFor.universities?.name ?? ""}
+          onMarkAsSent={() => updateRow(emailGenFor.id, { email_sent: true })}
+        />
+      )}
     </div>
   );
 }
 
-function Column({ col, rows, onOpen }: { col: typeof COLUMNS[number]; rows: Row[]; onOpen: (r: Row) => void }) {
+function Column({ col, rows, onOpen, onEmail }: { col: typeof COLUMNS[number]; rows: Row[]; onOpen: (r: Row) => void; onEmail: (r: Row) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.key });
   return (
     <div
@@ -281,24 +298,24 @@ function Column({ col, rows, onOpen }: { col: typeof COLUMNS[number]; rows: Row[
         <Badge variant="secondary" className="text-xs">{rows.length}</Badge>
       </div>
       <div className="space-y-2">
-        {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} />)}
+        {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} onEmail={() => onEmail(r)} />)}
         {rows.length === 0 && <p className="text-xs text-muted-foreground italic px-1">Vazio</p>}
       </div>
     </div>
   );
 }
 
-function DraggableCard({ row, onOpen }: { row: Row; onOpen: () => void }) {
+function DraggableCard({ row, onOpen, onEmail }: { row: Row; onOpen: () => void; onEmail: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({ id: row.id });
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.4 : 1 } : { opacity: isDragging ? 0.4 : 1 };
   return (
     <div ref={setNodeRef} style={style}>
-      <KanbanCard row={row} onOpen={onOpen} dragHandle={{ ...attributes, ...listeners }} />
+      <KanbanCard row={row} onOpen={onOpen} onEmail={onEmail} dragHandle={{ ...attributes, ...listeners }} />
     </div>
   );
 }
 
-function KanbanCard({ row, onOpen, dragHandle, dragging }: { row: Row; onOpen?: () => void; dragHandle?: Record<string, unknown>; dragging?: boolean }) {
+function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging }: { row: Row; onOpen?: () => void; onEmail?: () => void; dragHandle?: Record<string, unknown>; dragging?: boolean }) {
   const days = daysSince(row.last_activity_at);
   const inact = inactivityBadge(days);
   const prio = priorityFor(row);
@@ -325,19 +342,31 @@ function KanbanCard({ row, onOpen, dragHandle, dragging }: { row: Row; onOpen?: 
               {prio.icon} {prio.label}
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-muted-foreground italic line-clamp-1">→ {nextAction(row)}</div>
+          <div className="mt-2 text-[11px] text-muted-foreground italic line-clamp-1 flex items-center justify-between">
+            <span>→ {nextAction(row)}</span>
+            {onEmail && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onEmail(); }}
+                className="text-primary hover:text-primary-glow flex items-center gap-0.5 ml-2"
+              >
+                <Mail className="h-3 w-3" />
+                <span className="text-[10px]">Email</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </Card>
   );
 }
 
-function EditDialog({ row, history, onClose, onChange, onArchive }: {
+function EditDialog({ row, history, onClose, onChange, onArchive, onGenerateEmail }: {
   row: Row | null;
   history: HistoryRow[];
   onClose: () => void;
   onChange: (patch: Partial<Row>) => void;
   onArchive: () => void;
+  onGenerateEmail: () => void;
 }) {
   const [notes, setNotes] = useState("");
   useEffect(() => { setNotes(row?.notes ?? ""); }, [row?.id]);
@@ -350,10 +379,20 @@ function EditDialog({ row, history, onClose, onChange, onArchive }: {
           <DialogTitle>{row.universities?.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="text-sm text-muted-foreground">
-            {row.universities?.state}, {row.universities?.country === "USA" ? "EUA" : "Canadá"}
-            {row.universities?.division && <> · {row.universities.division}</>}
-            {row.universities?.estimated_cost_usd && <> · ~${row.universities.estimated_cost_usd.toLocaleString()}/ano</>}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {row.universities?.state}, {row.universities?.country === "USA" ? "EUA" : "Canadá"}
+              {row.universities?.division && <> · {row.universities.division}</>}
+              {row.universities?.estimated_cost_usd && <> · ~${row.universities.estimated_cost_usd.toLocaleString()}/ano</>}
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-lilac-500 border-lilac-500/30 hover:bg-lilac-500/10 gap-2"
+              onClick={onGenerateEmail}
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Gerar email com IA
+            </Button>
           </div>
 
           <div>
