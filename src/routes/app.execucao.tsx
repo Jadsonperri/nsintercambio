@@ -22,15 +22,19 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { 
-  Clock, AlertTriangle, Flame, GripVertical, History, Mail, 
-  Sparkles, ChevronRight, X, MapPin, DollarSign, Trophy, 
-  Check, Archive, ExternalLink, Activity, Info, Plus, GraduationCap
+  AlertTriangle, GripVertical, History, Mail, 
+  Sparkles, X, MapPin, DollarSign, Trophy, 
+  Check, Archive, ExternalLink, Activity, Info, Plus, GraduationCap,
+  ListChecks, Calendar as CalendarIcon, FileText
 } from "lucide-react";
 import { AIEmailGenerator } from "@/components/colleges/AIEmailGenerator";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PrazosPage } from "./app.prazos";
+import { DocumentosPage } from "./app.documentos";
 
 export const Route = createFileRoute("/app/execucao")({ component: ExecucaoPage });
 
