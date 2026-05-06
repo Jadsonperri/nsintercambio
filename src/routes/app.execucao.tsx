@@ -345,21 +345,21 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     <div
       ref={setNodeRef}
       className={cn(
-        "flex-shrink-0 w-[300px] flex flex-col gap-4 rounded-2xl border-t-4 bg-white/5 border-x border-b border-white/5 p-4 transition-all duration-300",
+        "flex-shrink-0 w-[300px] flex flex-col gap-4 rounded-2xl border-t-4 bg-card border-x border-b border-border p-4 transition-all duration-300",
         col.color.replace("border-", "border-t-"),
-        isOver ? "bg-white/[0.08] ring-2 ring-primary/20 scale-[1.01]" : ""
+        isOver ? "bg-accent/30 ring-2 ring-primary/30 scale-[1.01]" : ""
       )}
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={cn("h-2 w-2 rounded-full", col.color.replace("border-", "bg-"))} />
-          <h2 className="font-black text-sm uppercase tracking-tight">{col.label}</h2>
-          <Badge variant="secondary" className="bg-white/10 text-white text-[10px] px-1.5 py-0 h-4 border-0">
+          <h2 className="font-display font-black text-sm uppercase tracking-tight text-foreground">{col.label}</h2>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 border-0">
             {rows.length}
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-white">
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
             <Plus className="h-3.5 w-3.5" />
           </Button>
           {col.collapsible && (
@@ -373,9 +373,9 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
       <div className="flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
         {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} onEmail={() => onEmail(r)} colColor={col.color} />)}
         {rows.length === 0 && (
-          <div className="h-32 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center p-4">
-            <Info className="h-5 w-5 text-white/10 mb-2" />
-            <p className="text-[10px] text-white/30 font-medium">Arraste um card para esta etapa</p>
+          <div className="h-32 rounded-xl border border-dashed border-border flex flex-col items-center justify-center text-center p-4">
+            <Info className="h-5 w-5 text-muted-foreground/40 mb-2" />
+            <p className="text-[10px] text-muted-foreground font-medium">Arraste um card para esta etapa</p>
           </div>
         )}
       </div>
