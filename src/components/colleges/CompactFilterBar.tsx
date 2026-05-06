@@ -28,13 +28,13 @@ function NSSlider({
         className,
       )}
     >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-white/10">
-        <SliderPrimitive.Range className="absolute h-full rounded-full bg-gradient-to-r from-[#A855F7] to-[#7C3AED]" />
+      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-muted">
+        <SliderPrimitive.Range className="absolute h-full rounded-full bg-gradient-primary" />
       </SliderPrimitive.Track>
       {Array.from({ length: thumbs }).map((_, i) => (
         <SliderPrimitive.Thumb
           key={i}
-          className="block h-4 w-4 rounded-full bg-[#A855F7] border-2 border-white/90 shadow-[0_0_12px_rgba(168,85,247,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/40 transition-transform hover:scale-110"
+          className="block h-4 w-4 rounded-full bg-primary border-2 border-background shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-transform hover:scale-110"
         />
       ))}
     </SliderPrimitive.Root>
