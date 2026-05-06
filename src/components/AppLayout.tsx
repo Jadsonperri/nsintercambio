@@ -1,13 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Home, LayoutDashboard, GraduationCap, Brain, Wallet,
-  ListChecks, Mail, User as UserIcon, Globe, LogOut, Settings, Shield, ChevronUp,
-  Calendar, FileText, Calculator, Bell
+  Home, LayoutDashboard, GraduationCap, Brain, ListChecks, Mail,
+  User as UserIcon, Globe, LogOut, Settings, Shield, ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -22,8 +22,6 @@ const NAV: readonly NavItem[] = [
   { to: "/app/dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/app/faculdades", label: "Faculdades", icon: GraduationCap },
   { to: "/app/execucao", label: "CRM", icon: ListChecks },
-  { to: "/app/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/app/simulador", label: "Simulador", icon: Calculator },
   { to: "/app/ia", label: "Estratégia & IA", icon: Brain },
   { to: "/app/conexao", label: "Conexão", icon: Mail },
   { to: "/app/perfil", label: "Perfil", icon: UserIcon },
@@ -119,10 +117,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="md:hidden"><Logo size={26} /></div>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <button className="p-2 text-muted-foreground hover:text-foreground transition-smooth relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border-2 border-background" />
-            </button>
+            <NotificationsBell />
             <ThemeToggle />
           </div>
         </header>
