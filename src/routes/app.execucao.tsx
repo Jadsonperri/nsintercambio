@@ -331,7 +331,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     return (
       <div 
         onClick={onToggleCollapse}
-        className="w-12 h-[600px] flex flex-col items-center py-6 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
+        className="w-12 h-[600px] flex flex-col items-center py-6 bg-card border border-border rounded-2xl cursor-pointer hover:bg-accent/50 transition-colors"
       >
         <div className={cn("h-2 w-2 rounded-full mb-4", col.color.replace("border-", "bg-"))} />
         <div className="vertical-text font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
