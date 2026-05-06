@@ -47,12 +47,12 @@ export function CompactFilterBar({
   scholarshipOnly, onScholarshipChange,
 }: Props) {
   return (
-    <div className="rounded-2xl bg-[#12121F] border border-white/5 p-5 md:p-6 grid gap-6 md:grid-cols-3 md:divide-x md:divide-white/5">
+    <div className="rounded-2xl bg-card border border-border p-5 md:p-6 grid gap-6 md:grid-cols-3 md:divide-x md:divide-border">
       {/* Custo */}
       <div className="md:pr-6 flex flex-col justify-between gap-3 min-h-[68px]">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Custo (anual)</span>
-          <span className="text-sm font-bold text-white tabular-nums">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Custo (anual)</span>
+          <span className="text-sm font-bold text-foreground tabular-nums">
             {fmtK(costRange[0])} – {fmtK(costRange[1])}
           </span>
         </div>
@@ -70,8 +70,8 @@ export function CompactFilterBar({
       {/* Chance */}
       <div className="md:px-6 flex flex-col justify-between gap-3 min-h-[68px]">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Chance mínima</span>
-          <span className="text-sm font-bold text-white tabular-nums">{minChance}%</span>
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Chance mínima</span>
+          <span className="text-sm font-bold text-foreground tabular-nums">{minChance}%</span>
         </div>
         <NSSlider
           thumbs={1}
@@ -86,13 +86,13 @@ export function CompactFilterBar({
       {/* Bolsa */}
       <div className="md:pl-6 flex items-center justify-between gap-3 min-h-[68px]">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Bolsa</div>
-          <div className="text-sm font-bold text-white mt-1">Só com bolsa</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Bolsa</div>
+          <div className="text-sm font-bold text-foreground mt-1">Só com bolsa</div>
         </div>
         <Switch
           checked={scholarshipOnly}
           onCheckedChange={onScholarshipChange}
-          className="data-[state=checked]:bg-[#A855F7] data-[state=unchecked]:bg-white/10"
+          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
         />
       </div>
     </div>
