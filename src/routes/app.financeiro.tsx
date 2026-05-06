@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { TrendingUp, AlertTriangle, CheckCircle2, Wallet, Target, Clock } from "lucide-react";
 
-export const Route = createFileRoute("/app/financeiro")({ component: FinanceiroPage });
+export const Route = createFileRoute("/app/financeiro")({
+  beforeLoad: () => { throw redirect({ to: "/app/ia", search: { tab: "financeiro" } as never }); },
+  component: () => null,
+});
 
 type Fin = {
   monthly_income: number | null;
@@ -21,7 +24,7 @@ type Fin = {
   usd_rate_override: number | null;
 };
 
-function FinanceiroPage() {
+export function FinanceiroPage() {
   const { user } = useAuth();
   const [fin, setFin] = useState<Fin>({
     monthly_income: null, monthly_expenses: null, current_savings: null, budget_goal: null, currency: "BRL", usd_rate_override: null,

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -13,11 +13,14 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/simulador")({ component: SimuladorPage });
+export const Route = createFileRoute("/app/simulador")({
+  beforeLoad: () => { throw redirect({ to: "/app/ia", search: { tab: "simulador" } as never }); },
+  component: () => null,
+});
 
 const COLORS = ["#A855F7", "#F97316", "#3B82F6", "#10B981", "#6366F1"];
 
-function SimuladorPage() {
+export function SimuladorPage() {
   const [tuition, setTuition] = useState([35000]);
   const [housing, setHousing] = useState([1200]);
   const [food, setFood] = useState([600]);
