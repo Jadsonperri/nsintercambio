@@ -331,7 +331,7 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     return (
       <div 
         onClick={onToggleCollapse}
-        className="w-12 h-[600px] flex flex-col items-center py-6 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
+        className="w-12 h-[600px] flex flex-col items-center py-6 bg-card border border-border rounded-2xl cursor-pointer hover:bg-accent/50 transition-colors"
       >
         <div className={cn("h-2 w-2 rounded-full mb-4", col.color.replace("border-", "bg-"))} />
         <div className="vertical-text font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
@@ -345,21 +345,21 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
     <div
       ref={setNodeRef}
       className={cn(
-        "flex-shrink-0 w-[300px] flex flex-col gap-4 rounded-2xl border-t-4 bg-white/5 border-x border-b border-white/5 p-4 transition-all duration-300",
+        "flex-shrink-0 w-[300px] flex flex-col gap-4 rounded-2xl border-t-4 bg-card border-x border-b border-border p-4 transition-all duration-300",
         col.color.replace("border-", "border-t-"),
-        isOver ? "bg-white/[0.08] ring-2 ring-primary/20 scale-[1.01]" : ""
+        isOver ? "bg-accent/30 ring-2 ring-primary/30 scale-[1.01]" : ""
       )}
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={cn("h-2 w-2 rounded-full", col.color.replace("border-", "bg-"))} />
-          <h2 className="font-black text-sm uppercase tracking-tight">{col.label}</h2>
-          <Badge variant="secondary" className="bg-white/10 text-white text-[10px] px-1.5 py-0 h-4 border-0">
+          <h2 className="font-display font-black text-sm uppercase tracking-tight text-foreground">{col.label}</h2>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 border-0">
             {rows.length}
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-white">
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
             <Plus className="h-3.5 w-3.5" />
           </Button>
           {col.collapsible && (
@@ -373,9 +373,9 @@ function Column({ col, rows, isCollapsed, onToggleCollapse, onOpen, onEmail }: {
       <div className="flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
         {rows.map(r => <DraggableCard key={r.id} row={r} onOpen={() => onOpen(r)} onEmail={() => onEmail(r)} colColor={col.color} />)}
         {rows.length === 0 && (
-          <div className="h-32 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center p-4">
-            <Info className="h-5 w-5 text-white/10 mb-2" />
-            <p className="text-[10px] text-white/30 font-medium">Arraste um card para esta etapa</p>
+          <div className="h-32 rounded-xl border border-dashed border-border flex flex-col items-center justify-center text-center p-4">
+            <Info className="h-5 w-5 text-muted-foreground/40 mb-2" />
+            <p className="text-[10px] text-muted-foreground font-medium">Arraste um card para esta etapa</p>
           </div>
         )}
       </div>
@@ -419,9 +419,8 @@ function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: {
     <Card 
       onClick={onOpen}
       className={cn(
-        "group relative p-4 bg-[#1A1A2E] border-white/5 transition-all duration-300 cursor-pointer overflow-hidden",
-        dragging ? "shadow-2xl opacity-60 scale-105 rotate-2" : "hover:-translate-y-1 hover:border-white/20",
-        !dragging && colColor && `hover:shadow-[0_8px_30px_rgba(0,0,0,0.4),0_0_15px_${colColor.replace("border-[", "").replace("]", "")}20]`
+        "group relative p-4 bg-card border-border transition-all duration-300 cursor-pointer overflow-hidden",
+        dragging ? "shadow-2xl opacity-60 scale-105 rotate-2" : "hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
       )}
     >
       {/* Accent Line */}
@@ -430,17 +429,17 @@ function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: {
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0 pr-4">
-            <h3 className="font-black text-sm text-white truncate leading-tight group-hover:text-primary-glow transition-colors">
+            <h3 className="font-display font-black text-sm text-foreground truncate leading-tight group-hover:text-primary transition-colors">
               {row.universities?.name}
             </h3>
-            <p className="text-[10px] text-white/50 mt-0.5 truncate flex items-center gap-1">
+            <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
               <MapPin className="h-2.5 w-2.5" />
               {row.universities?.state} · {row.universities?.country === "USA" ? "EUA" : "Canadá"} · {row.universities?.division?.replace("_", " ") || "D1"}
             </p>
           </div>
           <button 
             {...dragHandle} 
-            className="text-white/20 hover:text-white transition-colors cursor-grab active:cursor-grabbing p-1 -mr-1"
+            className="text-muted-foreground/40 hover:text-foreground transition-colors cursor-grab active:cursor-grabbing p-1 -mr-1"
             onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="h-4 w-4" />
@@ -449,16 +448,16 @@ function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <div className="text-[11px] font-bold text-emerald-400">
+             <div className="text-[11px] font-bold text-success">
                ~${row.universities?.estimated_cost_usd?.toLocaleString()}/ano
              </div>
           </div>
           <div className="flex items-center gap-1.5">
              <span className={cn(
                "h-1.5 w-1.5 rounded-full",
-               isActive ? "bg-emerald-500 animate-pulse" : "bg-white/10"
+               isActive ? "bg-success animate-pulse" : "bg-muted-foreground/30"
              )} />
-             <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">
+             <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                {isActive ? "Ativo" : "Inativo"}
              </span>
           </div>
@@ -466,28 +465,28 @@ function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: {
 
         <div className="flex items-center justify-between gap-3 pt-1">
            <div className="flex-1 space-y-1.5">
-              <div className="flex items-center justify-between text-[9px] font-bold uppercase text-white/40">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase text-muted-foreground">
                 <span>Checklist</span>
                 <span>{checklistSteps}/3</span>
               </div>
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#A855F7] to-[#FF6B2B] rounded-full transition-all duration-500" 
+                  className="h-full bg-gradient-primary rounded-full transition-all duration-500" 
                   style={{ width: `${progress}%` }} 
                 />
               </div>
            </div>
            <div className={cn(
              "px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1",
-             row.interest_level === "high" ? "bg-emerald-500/10 text-emerald-500" :
-             row.interest_level === "low" ? "bg-rose-500/10 text-rose-500" :
-             "bg-amber-500/10 text-amber-500"
+             row.interest_level === "high" ? "bg-success/10 text-success" :
+             row.interest_level === "low" ? "bg-destructive/10 text-destructive" :
+             "bg-warning/10 text-warning"
            )}>
              <span className={cn(
                "h-1 w-1 rounded-full",
-               row.interest_level === "high" ? "bg-emerald-500" :
-               row.interest_level === "low" ? "bg-rose-500" :
-               "bg-amber-500"
+               row.interest_level === "high" ? "bg-success" :
+               row.interest_level === "low" ? "bg-destructive" :
+               "bg-warning"
              )} />
              {row.interest_level === "high" ? "Alto" : row.interest_level === "low" ? "Baixo" : "Médio"}
            </div>
@@ -498,7 +497,7 @@ function KanbanCard({ row, onOpen, onEmail, dragHandle, dragging, colColor }: {
             variant="ghost" 
             size="sm" 
             onClick={(e) => { e.stopPropagation(); onEmail(); }}
-            className="w-full mt-1 h-8 bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest gap-2 hover:bg-[#A855F7]/20 hover:text-[#A855F7] hover:border-[#A855F7]/30 transition-all"
+            className="w-full mt-1 h-8 bg-muted/50 border border-border text-[10px] font-bold uppercase tracking-widest gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
           >
             <Mail className="h-3 w-3" /> Enviar Email
           </Button>
